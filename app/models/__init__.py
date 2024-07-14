@@ -1,0 +1,124 @@
+from app.extensions import db
+
+# (Organization, Storage, Employee, Supplier, Product, Service, IncomingInvoice,
+# IncomingInvoiceItem, Customer, OutgoingInvoice, OutgoingInvoiceItem, Inventory)
+
+class Organization(db.Model):
+    __tablename__ = 'organization'
+    organization_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+
+class Storage(db.Model):
+    __tablename__ = 'storage'
+    storage_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    location = db.Column(db.String(255))
+    capacity = db.Column(db.Numeric)
+
+class Employee(db.Model):
+    __tablename__ = 'employee'
+    employee_id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(50), nullable=False)
+    last_name = db.Column(db.String(50), nullable=False)
+    position = db.Column(db.String(100))
+
+class Supplier(db.Model):
+    __tablename__ = 'supplier'
+    supplier_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    contact_info = db.Column(db.String(255))
+    address = db.Column(db.Text)
+
+class Product(db.Model):
+    __tablename__ = 'product'
+    product_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    unit_price = db.Column(db.Numeric(10, 2), nullable=False)
+    current_stock = db.Column(db.Numeric(10, 2), default=0)
+    unit_of_measure = db.Column(db.String(20), nullable=False)
+
+class Service(db.Model):
+    __tablename__ = 'service'
+    service_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    unit_price = db.Column(db.Numeric(10, 2), nullable=False)
+
+class IncomingInvoice(db.Model):
+    __tablename__ = 'incominginvoice'
+    incoming_invoice_id = db.Column(db.Integer, primary_key=True)
+    number = db.Column(db.String(50), unique=True, nullable=False)
+    date = db.Column(db.DateTime, nullable=False)
+    counter_agent_id = db.Column(db.Integer, db.ForeignKey('supplier.supplier_id'))
+    operation_type = db.Column(db.String(50), nullable=False)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organization.organization_id'))
+    storage_id = db.Column(db.Integer, db.ForeignKey('storage.storage_id'))
+    contract_number = db.Column(db.String(50))
+    total_amount = db.Column(db.Numeric(10, 2), nullable=False)
+    total_vat = db.Column(db.Numeric(10, 2), nullable=False)
+    responsible_person_id = db.Column(db.Integer, db.ForeignKey('employee.employee_id'))
+    comment = db.Column(db.Text)
+
+class IncomingInvoiceItem(db.Model):
+    __tablename__ = 'incominginvoiceitem'
+    incoming_invoice_item_id = db.Column(db.Integer, primary_key=True)
+    incoming_invoice_id = db.Column(db.Integer, db.ForeignKey('incominginvoice.incoming_invoice_id'))
+    product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'))
+    quantity = db.Column(db.Numeric(10, 3), nullable=False)
+    unit_of_measure = db.Column(db.String(20), nullable=False)
+    unit_price = db.Column(db.Numeric(10, 2), nullable=False)
+    total_price = db.Column(db.Numeric(10, 2), nullable=False)
+    vat_percentage = db.Column(db.Numeric(5, 2), nullable=False)
+    vat_amount = db.Column(db.Numeric(10, 2), nullable=False)
+    account_number = db.Column(db.String(20))
+
+class Customer(db.Model):
+    __tablename__ = 'customer'
+    customer_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    contact_info = db.Column(db.String(255))
+    address = db.Column(db.Text)
+
+class OutgoingInvoice(db.Model):
+    __tablename__ = 'outgoinginvoice'
+    outgoing_invoice_id = db.Column(db.Integer, primary_key=True)
+    number = db.Column(db.String(50), unique=True, nullable=False)
+    date = db.Column(db.DateTime, nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'))
+    organization_id = db.Column(db.Integer, db.ForeignKey('organization.organization_id'))
+    storage_id = db.Column(db.Integer, db.ForeignKey('storage.storage_id'))
+    total_amount = db.Column(db.Numeric(10, 2), nullable=False)
+    total_vat = db.Column(db.Numeric(10, 2), nullable=False)
+    responsible_person_id = db.Column(db.Integer, db.ForeignKey('employee.employee_id'))
+    contract_number = db.Column(db.String(50))
+    payment_document = db.Column(db.String(255))
+    comment = db.Column(db.Text)
+
+class OutgoingInvoiceItem(db.Model):
+    __tablename__ = 'outgoinginvoiceitem'
+    outgoing_invoice_item_id = db.Column(db.Integer, primary_key=True)
+    outgoing_invoice_id = db.Column(db.Integer, db.ForeignKey('outgoinginvoice.outgoing_invoice_id'))
+    product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'))
+    service_id = db.Column(db.Integer, db.ForeignKey('service.service_id'))
+    quantity = db.Column(db.Numeric(10, 3), nullable=False)
+    unit_of_measure = db.Column(db.String(20), nullable=False)
+    unit_price = db.Column(db.Numeric(10, 2), nullable=False)
+    total_price = db.Column(db.Numeric(10, 2), nullable=False)
+    vat_percentage = db.Column(db.Numeric(5, 2), nullable=False)
+    vat_amount = db.Column(db.Numeric(10, 2), nullable=False)
+    discount = db.Column(db.Numeric(10, 2), default=0)
+    account_number = db.Column(db.String(20))
+
+class Inventory(db.Model):
+    __tablename__ = 'inventory'
+    inventory_id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'))
+    quantity = db.Column(db.Numeric(10, 3), nullable=False)
+    purchase_date = db.Column(db.DateTime, nullable=False)
+    purchase_price = db.Column(db.Numeric(10, 2), nullable=False)
+
+
+
+
+
