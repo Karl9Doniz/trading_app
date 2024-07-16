@@ -14,8 +14,6 @@ incoming_invoice_model = api.model('IncomingInvoice', {
     'organization_id': fields.Integer(required=True),
     'storage_id': fields.Integer(required=True),
     'contract_number': fields.String(),
-    'total_amount': fields.Float(required=True),
-    'total_vat': fields.Float(required=True),
     'responsible_person_id': fields.Integer(required=True),
     'comment': fields.String()
 })
@@ -26,14 +24,17 @@ class IncomingInvoiceList(Resource):
     @api.marshal_list_with(incoming_invoice_model)
     @jwt_required()
     def get(self):
-        return IncomingInvoice.query.all()
+        current_user = get_jwt_identity()
+        return IncomingInvoice.query.filter_by(organization_id=current_user).all()
 
     @api.doc('create_incoming_invoice')
     @api.expect(incoming_invoice_model)
     @api.marshal_with(incoming_invoice_model, code=201)
     @jwt_required()
     def post(self):
+        current_user = get_jwt_identity()
         new_invoice = IncomingInvoice(**api.payload)
+        new_invoice.organization_id = current_user
         db.session.add(new_invoice)
         db.session.commit()
         return new_invoice, 201
@@ -46,14 +47,17 @@ class IncomingInvoiceItem(Resource):
     @api.marshal_with(incoming_invoice_model)
     @jwt_required()
     def get(self, id):
-        return IncomingInvoice.query.get_or_404(id)
+        current_user = get_jwt_identity()
+        invoice = IncomingInvoice.query.filter_by(id=id, organization_id=current_user).first_or_404()
+        return invoice
 
     @api.doc('update_incoming_invoice')
     @api.expect(incoming_invoice_model)
     @api.marshal_with(incoming_invoice_model)
     @jwt_required()
     def patch(self, id):
-        invoice = IncomingInvoice.query.get_or_404(id)
+        current_user = get_jwt_identity()
+        invoice = IncomingInvoice.query.filter_by(id=id, organization_id=current_user).first_or_404()
         data = api.payload
         for key, value in data.items():
             setattr(invoice, key, value)
@@ -64,7 +68,8 @@ class IncomingInvoiceItem(Resource):
     @api.response(204, 'Incoming Invoice deleted')
     @jwt_required()
     def delete(self, id):
-        invoice = IncomingInvoice.query.get_or_404(id)
+        current_user = get_jwt_identity()
+        invoice = IncomingInvoice.query.filter_by(id=id, organization_id=current_user).first_or_404()
         db.session.delete(invoice)
         db.session.commit()
         return '', 204

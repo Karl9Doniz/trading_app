@@ -1,5 +1,5 @@
 from flask_restx import Namespace, Resource, fields
-from flask_jwt_extended import jwt_required
+# from flask_jwt_extended import jwt_required
 from app.models import OutgoingInvoiceItem
 from app.extensions import db
 
@@ -24,14 +24,12 @@ outgoing_invoice_item_model = api.model('OutgoingInvoiceItem', {
 class OutgoingInvoiceItemList(Resource):
     @api.doc('list_outgoing_invoice_items')
     @api.marshal_list_with(outgoing_invoice_item_model)
-    @jwt_required()
     def get(self):
         return OutgoingInvoiceItem.query.all()
 
     @api.doc('create_outgoing_invoice_item')
     @api.expect(outgoing_invoice_item_model)
     @api.marshal_with(outgoing_invoice_item_model, code=201)
-    @jwt_required()
     def post(self):
         new_item = OutgoingInvoiceItem(**api.payload)
         db.session.add(new_item)
@@ -44,14 +42,12 @@ class OutgoingInvoiceItemList(Resource):
 class IncomingInvoiceItemResource(Resource):
     @api.doc('get_outgoing_invoice_item')
     @api.marshal_with(outgoing_invoice_item_model)
-    @jwt_required()
     def get(self, id):
         return OutgoingInvoiceItem.query.get_or_404(id)
 
     @api.doc('update_outgoing_invoice_item')
     @api.expect(outgoing_invoice_item_model)
     @api.marshal_with(outgoing_invoice_item_model)
-    @jwt_required()
     def patch(self, id):
         item = OutgoingInvoiceItem.query.get_or_404(id)
         data = api.payload
@@ -62,7 +58,6 @@ class IncomingInvoiceItemResource(Resource):
 
     @api.doc('delete_outgoing_invoice_item')
     @api.response(204, 'Outgoing Invoice Item deleted')
-    @jwt_required()
     def delete(self, id):
         item = OutgoingInvoiceItem.query.get_or_404(id)
         db.session.delete(item)

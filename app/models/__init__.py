@@ -1,7 +1,20 @@
 from app.extensions import db
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # (Organization, Storage, Employee, Supplier, Product, Service, IncomingInvoice,
 # IncomingInvoiceItem, Customer, OutgoingInvoice, OutgoingInvoiceItem, Inventory)
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256))
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 class Organization(db.Model):
     __tablename__ = 'organization'
@@ -55,8 +68,6 @@ class IncomingInvoice(db.Model):
     organization_id = db.Column(db.Integer, db.ForeignKey('organization.organization_id'))
     storage_id = db.Column(db.Integer, db.ForeignKey('storage.storage_id'))
     contract_number = db.Column(db.String(50))
-    total_amount = db.Column(db.Numeric(10, 2), nullable=False)
-    total_vat = db.Column(db.Numeric(10, 2), nullable=False)
     responsible_person_id = db.Column(db.Integer, db.ForeignKey('employee.employee_id'))
     comment = db.Column(db.Text)
 
@@ -88,8 +99,6 @@ class OutgoingInvoice(db.Model):
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'))
     organization_id = db.Column(db.Integer, db.ForeignKey('organization.organization_id'))
     storage_id = db.Column(db.Integer, db.ForeignKey('storage.storage_id'))
-    total_amount = db.Column(db.Numeric(10, 2), nullable=False)
-    total_vat = db.Column(db.Numeric(10, 2), nullable=False)
     responsible_person_id = db.Column(db.Integer, db.ForeignKey('employee.employee_id'))
     contract_number = db.Column(db.String(50))
     payment_document = db.Column(db.String(255))

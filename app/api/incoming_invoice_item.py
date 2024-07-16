@@ -22,14 +22,12 @@ incoming_invoice_item_model = api.model('IncomingInvoiceItem', {
 class IncomingInvoiceItemList(Resource):
     @api.doc('list_incoming_invoice_items')
     @api.marshal_list_with(incoming_invoice_item_model)
-    @jwt_required()
     def get(self):
         return IncomingInvoiceItem.query.all()
 
     @api.doc('create_incoming_invoice_item')
     @api.expect(incoming_invoice_item_model)
     @api.marshal_with(incoming_invoice_item_model, code=201)
-    @jwt_required()
     def post(self):
         new_item = IncomingInvoiceItem(**api.payload)
         db.session.add(new_item)
@@ -42,7 +40,6 @@ class IncomingInvoiceItemList(Resource):
 class IncomingInvoiceItemResource(Resource):
     @api.doc('get_incoming_invoice_item')
     @api.marshal_with(incoming_invoice_item_model)
-    @jwt_required()
     def get(self, id):
         return IncomingInvoiceItem.query.get_or_404(id)
 
@@ -60,7 +57,6 @@ class IncomingInvoiceItemResource(Resource):
 
     @api.doc('delete_incoming_invoice_item')
     @api.response(204, 'Incoming Invoice Item deleted')
-    @jwt_required()
     def delete(self, id):
         item = IncomingInvoiceItem.query.get_or_404(id)
         db.session.delete(item)
