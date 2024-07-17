@@ -3,7 +3,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token, jwt_re
 from app.models import User
 from app.extensions import db, jwt
 
-auth_ns = Namespace('auth', description='Authentication operations')
+auth_ns = Namespace('user', description='Authentication operations')
 
 user_model = auth_ns.model('User', {
     'username': fields.String(required=True),

@@ -8,7 +8,7 @@ def create_app(config_name='development'):
     app.config.from_object(f'config.{config_name.capitalize()}Config')
 
     # JWT settings
-    app.config['JWT_SECRET_KEY'] = 'your-secret-key'  # Change this!
+    app.config['JWT_SECRET_KEY'] = 'your-secret-key'  # Change this
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
     app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
 
