@@ -24,17 +24,16 @@ class IncomingInvoiceList(Resource):
     @api.marshal_list_with(incoming_invoice_model)
     @jwt_required()
     def get(self):
-        current_user = get_jwt_identity()
-        return IncomingInvoice.query.filter_by(organization_id=current_user).all()
+        #current_user = get_jwt_identity()
+        return IncomingInvoice.query.all()
 
     @api.doc('create_incoming_invoice')
     @api.expect(incoming_invoice_model)
     @api.marshal_with(incoming_invoice_model, code=201)
     @jwt_required()
     def post(self):
-        current_user = get_jwt_identity()
+        # current_user = get_jwt_identity()
         new_invoice = IncomingInvoice(**api.payload)
-        new_invoice.organization_id = current_user
         db.session.add(new_invoice)
         db.session.commit()
         return new_invoice, 201
@@ -47,8 +46,7 @@ class IncomingInvoiceItem(Resource):
     @api.marshal_with(incoming_invoice_model)
     @jwt_required()
     def get(self, id):
-        current_user = get_jwt_identity()
-        invoice = IncomingInvoice.query.filter_by(id=id, organization_id=current_user).first_or_404()
+        invoice = IncomingInvoice.query.filter_by(incoming_invoice_id=id).first_or_404()
         return invoice
 
     @api.doc('update_incoming_invoice')
@@ -56,8 +54,7 @@ class IncomingInvoiceItem(Resource):
     @api.marshal_with(incoming_invoice_model)
     @jwt_required()
     def patch(self, id):
-        current_user = get_jwt_identity()
-        invoice = IncomingInvoice.query.filter_by(id=id, organization_id=current_user).first_or_404()
+        invoice = IncomingInvoice.query.filter_by(incoming_invoice_id=id).first_or_404()
         data = api.payload
         for key, value in data.items():
             setattr(invoice, key, value)
@@ -68,8 +65,7 @@ class IncomingInvoiceItem(Resource):
     @api.response(204, 'Incoming Invoice deleted')
     @jwt_required()
     def delete(self, id):
-        current_user = get_jwt_identity()
-        invoice = IncomingInvoice.query.filter_by(id=id, organization_id=current_user).first_or_404()
+        invoice = IncomingInvoice.query.filter_by(incoming_invoice_id=id).first_or_404()
         db.session.delete(invoice)
         db.session.commit()
         return '', 204
