@@ -1,0 +1,32 @@
+.incoming-invoices {
+    padding: 20px;
+  }
+
+  .incoming-invoices h2 {
+    margin-bottom: 20px;
+  }
+
+  .incoming-invoices table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .incoming-invoices th,
+  .incoming-invoices td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: left;
+  }
+
+  .incoming-invoices th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+  }
+
+  .incoming-invoices tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+
+  .incoming-invoices tr:hover {
+    background-color: #f5f5f5;
+  }

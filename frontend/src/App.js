@@ -1,62 +1,37 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import SignIn from './components/auth/signin';
+import Register from './components/auth/register';
+import IncomingInvoices from './components/incoming_invoices';
+import CreateIncomingInvoice from './components/create_incoming_invoice';
 
 function App() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage('');
-
-    try {
-      const response = await axios.post('http://127.0.0.1:5000/api/user/login', {
-        username,
-        password
-      });
-
-      if (response.status === 200) {
-        setMessage('Login successful!');
-        localStorage.setItem('token', response.data.access_token);
-      }
-    } catch (error) {
-      setMessage('Login failed. Please check your credentials.');
-      console.error('Login error', error);
-    }
-  };
-
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Login</h1>
-        <form onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="username">Username:</label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="password">Password:</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          <button type="submit">Login</button>
-        </form>
-        {message && <p>{message}</p>}
-      </header>
-    </div>
+    <Router>
+      <div className="App">
+        <Routes>
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/incoming-invoices"
+            element={
+              localStorage.getItem('token')
+                ? <IncomingInvoices />
+                : <Navigate to="/signin" replace />
+            }
+          />
+          <Route
+            path="/create-incoming-invoice"
+            element={
+              localStorage.getItem('token')
+                ? <CreateIncomingInvoice />
+                : <Navigate to="/signin" replace />
+            }
+          />
+          <Route path="/" element={<Navigate to="/signin" replace />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
