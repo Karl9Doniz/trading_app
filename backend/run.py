@@ -1,4 +1,4 @@
-from app import create_app, db
+from app import create_app
 from flask.cli import FlaskGroup
 
 cli = FlaskGroup(create_app=create_app)
