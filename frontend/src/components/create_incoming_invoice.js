@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { createIncomingInvoice, createIncomingInvoiceItem } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { createIncomingInvoice, createIncomingInvoiceItem, getSuppliers, getOrganizations, getStorages, getEmployees } from '../services/api';
 import styles from '../styles/create_incoming_invoice.css';
 
 function CreateIncomingInvoice() {
@@ -27,8 +28,30 @@ function CreateIncomingInvoice() {
     account_number: ''
   });
 
+  const [suppliers, setSuppliers] = useState([]);
+  const [organizations, setOrganizations] = useState([]);
+  const [storages, setStorages] = useState([]);
+  const [employees, setEmployees] = useState([]);
+
+  useEffect(() => {
+    fetchDropdownData();
+  }, []);
+
+  const fetchDropdownData = async () => {
+    const suppliersData = await getSuppliers();
+    const organizationsData = await getOrganizations();
+    const storagesData = await getStorages();
+    const employeesData = await getEmployees();
+
+    setSuppliers(suppliersData);
+    setOrganizations(organizationsData);
+    setStorages(storagesData);
+    setEmployees(employeesData);
+  };
+
   const handleInvoiceChange = (e) => {
-    setInvoice({ ...invoice, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setInvoice({ ...invoice, [name]: value });
   };
 
   const handleItemChange = (e) => {
@@ -53,7 +76,7 @@ function CreateIncomingInvoice() {
     e.preventDefault();
     try {
       const invoiceResponse = await createIncomingInvoice(invoice);
-      const invoiceId = invoiceResponse.data.id; // Assuming the API returns the created invoice ID
+      const invoiceId = invoiceResponse.incoming_invoice_id;
 
       for (let item of items) {
         await createIncomingInvoiceItem({ ...item, incoming_invoice_id: invoiceId });
@@ -70,6 +93,9 @@ function CreateIncomingInvoice() {
   return (
     <div className={styles.container}>
       <h2 className={styles.title}>Create Incoming Invoice</h2>
+      <Link to="/incoming-invoices" className={styles.navButton}>
+        View All Invoices
+      </Link>
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={styles.invoiceSection}>
           <h3>Invoice Details</h3>
@@ -88,14 +114,17 @@ function CreateIncomingInvoice() {
             onChange={handleInvoiceChange}
             className={styles.input}
           />
-          <input
-            type="number"
+          <select
             name="counter_agent_id"
             value={invoice.counter_agent_id}
             onChange={handleInvoiceChange}
-            placeholder="Counter Agent ID"
             className={styles.input}
-          />
+          >
+            <option value="">Select Supplier</option>
+            {suppliers.map(supplier => (
+              <option key={supplier.supplier_id} value={supplier.supplier_id}>{supplier.name}</option>
+            ))}
+          </select>
           <input
             type="text"
             name="operation_type"
@@ -104,22 +133,28 @@ function CreateIncomingInvoice() {
             placeholder="Operation Type"
             className={styles.input}
           />
-          <input
-            type="number"
+          <select
             name="organization_id"
             value={invoice.organization_id}
             onChange={handleInvoiceChange}
-            placeholder="Organization ID"
             className={styles.input}
-          />
-          <input
-            type="number"
+          >
+            <option value="">Select Organization</option>
+            {organizations.map(org => (
+              <option key={org.organization_id} value={org.organization_id}>{org.name}</option>
+            ))}
+          </select>
+          <select
             name="storage_id"
             value={invoice.storage_id}
             onChange={handleInvoiceChange}
-            placeholder="Storage ID"
             className={styles.input}
-          />
+          >
+            <option value="">Select Storage</option>
+            {storages.map(storage => (
+              <option key={storage.storage_id} value={storage.storage_id}>{storage.name}</option>
+            ))}
+          </select>
           <input
             type="text"
             name="contract_number"
@@ -128,14 +163,19 @@ function CreateIncomingInvoice() {
             placeholder="Contract Number"
             className={styles.input}
           />
-          <input
-            type="number"
+          <select
             name="responsible_person_id"
             value={invoice.responsible_person_id}
             onChange={handleInvoiceChange}
-            placeholder="Responsible Person ID"
             className={styles.input}
-          />
+          >
+            <option value="">Select Responsible Person</option>
+            {employees.map(employee => (
+              <option key={employee.employee_id} value={employee.employee_id}>
+                {`${employee.first_name} ${employee.last_name}`}
+              </option>
+            ))}
+          </select>
           <textarea
             name="comment"
             value={invoice.comment}

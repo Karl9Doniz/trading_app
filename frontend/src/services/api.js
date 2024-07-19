@@ -47,3 +47,39 @@ export const getIncomingInvoiceItems = async (invoiceId) => {
     });
     return response.data;
   };
+
+  export const getSuppliers = async () => {
+    const response = await axios.get(`${API_URL}/suppliers/`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    return response.data;
+  };
+
+  export const getOrganizations = async () => {
+    const response = await axios.get(`${API_URL}/organizations/`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    return response.data;
+  };
+
+  export const getStorages = async () => {
+    const response = await axios.get(`${API_URL}/storages/`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    return response.data;
+  };
+
+  export const getEmployees = async () => {
+    const response = await axios.get(`${API_URL}/employees/`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    return response.data;
+  };

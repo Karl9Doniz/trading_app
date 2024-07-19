@@ -1,5 +1,6 @@
 from app.extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.orm import relationship
 
 # (Organization, Storage, Employee, Supplier, Product, Service, IncomingInvoice,
 # IncomingInvoiceItem, Customer, OutgoingInvoice, OutgoingInvoiceItem, Inventory)
@@ -60,6 +61,7 @@ class Service(db.Model):
 
 class IncomingInvoice(db.Model):
     __tablename__ = 'incominginvoice'
+
     incoming_invoice_id = db.Column(db.Integer, primary_key=True)
     number = db.Column(db.String(50), unique=True, nullable=False)
     date = db.Column(db.DateTime, nullable=False)
@@ -71,10 +73,14 @@ class IncomingInvoice(db.Model):
     responsible_person_id = db.Column(db.Integer, db.ForeignKey('employee.employee_id'))
     comment = db.Column(db.Text)
 
+    # Add this relationship
+    items = relationship("IncomingInvoiceItem", cascade="all, delete-orphan", back_populates="invoice")
+
 class IncomingInvoiceItem(db.Model):
     __tablename__ = 'incominginvoiceitem'
+
     incoming_invoice_item_id = db.Column(db.Integer, primary_key=True)
-    incoming_invoice_id = db.Column(db.Integer, db.ForeignKey('incominginvoice.incoming_invoice_id'))
+    incoming_invoice_id = db.Column(db.Integer, db.ForeignKey('incominginvoice.incoming_invoice_id', ondelete='CASCADE'))
     product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'))
     quantity = db.Column(db.Numeric(10, 3), nullable=False)
     unit_of_measure = db.Column(db.String(20), nullable=False)
@@ -83,6 +89,9 @@ class IncomingInvoiceItem(db.Model):
     vat_percentage = db.Column(db.Numeric(5, 2), nullable=False)
     vat_amount = db.Column(db.Numeric(10, 2), nullable=False)
     account_number = db.Column(db.String(20))
+
+    # Add this relationship
+    invoice = relationship("IncomingInvoice", back_populates="items")
 
 class Customer(db.Model):
     __tablename__ = 'customer'
