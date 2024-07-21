@@ -5,6 +5,7 @@ import Register from './components/auth/register';
 import IncomingInvoices from './components/incoming_invoices';
 import CreateIncomingInvoice from './components/create_incoming_invoice';
 import ProductList from './components/product_list';
+import EditIncomingInvoice from './components/edit_incoming_invoice';
 
 function App() {
   return (
@@ -37,7 +38,16 @@ function App() {
                 : <Navigate to="/signin" replace />
             }
           />
+          <Route
+            path="/edit-incoming-invoice/:id"
+            element={
+              localStorage.getItem('token')
+                ? <EditIncomingInvoice />
+                : <Navigate to="/signin" replace />
+            }
+          />
           <Route path="/" element={<Navigate to="/signin" replace />} />
+
         </Routes>
       </div>
     </Router>

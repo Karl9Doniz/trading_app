@@ -92,8 +92,6 @@ class IncomingInvoiceList(Resource):
         db.session.commit()
         return new_invoice, 201
 
-# ... rest of the code remains the same
-
 @api.route('/<int:id>')
 @api.param('id', 'The incoming invoice identifier')
 @api.response(404, 'Incoming Invoice not found')
@@ -112,8 +110,46 @@ class IncomingInvoiceID(Resource):
     def patch(self, id):
         invoice = IncomingInvoice.query.filter_by(incoming_invoice_id=id).first_or_404()
         data = api.payload
+
+        # Update main invoice fields
         for key, value in data.items():
-            setattr(invoice, key, value)
+            if key != 'items':
+                setattr(invoice, key, value)
+
+        # Update items
+        if 'items' in data:
+            # Remove existing items
+            IncomingInvoiceItem.query.filter_by(incoming_invoice_id=id).delete()
+
+            # Add new items
+            for item_data in data['items']:
+                new_item = IncomingInvoiceItem(
+                    incoming_invoice_id=id,
+                    product_name=item_data['product_name'],
+                    product_description=item_data.get('product_description'),
+                    quantity=item_data['quantity'],
+                    unit_of_measure=item_data['unit_of_measure'],
+                    unit_price=item_data['unit_price'],
+                    total_price=item_data['total_price'],
+                    vat_percentage=item_data['vat_percentage'],
+                    vat_amount=item_data['vat_amount'],
+                    account_number=item_data.get('account_number')
+                )
+                db.session.add(new_item)
+
+                # Update or create product
+                product = Product.query.filter_by(name=item_data['product_name']).first()
+                if not product:
+                    product = Product(
+                        name=item_data['product_name'],
+                        unit_price=item_data['unit_price'],
+                        unit_of_measure=item_data['unit_of_measure']
+                    )
+                    db.session.add(product)
+                else:
+                    product.unit_price = item_data['unit_price']
+                    product.unit_of_measure = item_data['unit_of_measure']
+
         db.session.commit()
         return invoice
 

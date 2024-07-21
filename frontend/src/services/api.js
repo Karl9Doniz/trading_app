@@ -103,23 +103,6 @@ export const getIncomingInvoiceItems = async (invoiceId) => {
     return response.data;
   };
 
-//   export const getProducts = async () => {
-//     try {
-//       const response = await fetch('/api/products/', {
-//         headers: {
-//           'Authorization': `Bearer ${localStorage.getItem('token')}`
-//         }
-//       });
-//       if (!response.ok) {
-//         throw new Error('Failed to fetch products');
-//       }
-//       return await response.json();
-//     } catch (error) {
-//       console.error('Error:', error);
-//       throw error;
-//     }
-//   };
-
   export const getProducts = async () => {
     const response = await axios.get(`${API_URL}/products/`, {
       headers: {
@@ -128,3 +111,51 @@ export const getIncomingInvoiceItems = async (invoiceId) => {
     });
     return response.data;
 };
+
+export const updateInvoice = async (id, data) => {
+    const response = await fetch(`/api/incoming-invoices/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify(data)
+    });
+    return await response.json();
+  };
+
+  export const deleteInvoice = async (id) => {
+    await fetch(`/api/incoming-invoices/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+  };
+
+  export const getInvoice = async (id) => {
+    try {
+      const response = await fetch(`/api/incoming-invoices/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const text = await response.text();
+      console.log('API Response:', text);
+
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        console.error('JSON Parse Error:', e);
+        throw new Error('Invalid JSON in response');
+      }
+    } catch (error) {
+      console.error('Error fetching invoice:', error);
+      throw error;
+    }
+  };

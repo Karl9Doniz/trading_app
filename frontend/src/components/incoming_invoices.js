@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getIncomingInvoices } from '../services/api';
 import AuthErrorHandler from './auth/auth_error_handler';
 import '../styles/incoming_invoices.css';
@@ -8,6 +8,7 @@ function IncomingInvoices() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchInvoices();
@@ -26,6 +27,10 @@ function IncomingInvoices() {
       }
       setLoading(false);
     }
+  };
+
+  const handleInvoiceClick = (id) => {
+    navigate(`/edit-incoming-invoice/${id}`);
   };
 
   if (loading) return <div>Loading...</div>;
@@ -53,15 +58,15 @@ function IncomingInvoices() {
           </tr>
         </thead>
         <tbody>
-          {invoices.map((invoice) => (
-            <tr key={invoice.incoming_invoice_id}>
-              <td>{new Date(invoice.date).toLocaleDateString()}</td>
-              <td>{invoice.number}</td>
-              <td>{invoice.operation_type}</td>
-              <td>{invoice.counter_agent_id}</td>
-              <td>{invoice.contract_number}</td>
-            </tr>
-          ))}
+        {invoices.map((invoice) => (
+          <tr key={invoice.incoming_invoice_id} onClick={() => handleInvoiceClick(invoice.incoming_invoice_id)}>
+            <td>{new Date(invoice.date).toLocaleDateString()}</td>
+            <td>{invoice.number}</td>
+            <td>{invoice.operation_type}</td>
+            <td>{invoice.counter_agent_id}</td>
+            <td>{invoice.contract_number}</td>
+          </tr>
+        ))}
         </tbody>
       </table>
     </div>
