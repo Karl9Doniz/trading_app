@@ -1,37 +1,37 @@
-.incoming-invoices {
+.productList {
     padding: 20px;
   }
 
-  .incoming-invoices h2 {
+  .productList h2 {
     margin-bottom: 20px;
   }
 
-  .incoming-invoices table {
+  .productList table {
     width: 100%;
     border-collapse: collapse;
   }
 
-  .incoming-invoices th,
-  .incoming-invoices td {
+  .productList th,
+  .productList td {
     border: 1px solid #ddd;
     padding: 12px;
     text-align: left;
   }
 
-  .incoming-invoices th {
+  .productList th {
     background-color: #f2f2f2;
     font-weight: bold;
   }
 
-  .incoming-invoices tr:nth-child(even) {
+  .productList tr:nth-child(even) {
     background-color: #f9f9f9;
   }
 
-  .incoming-invoices tr:hover {
+  .productList tr:hover {
     background-color: #f5f5f5;
   }
 
-  .nav-button {
+  .navButton {
     display: inline-block;
     padding: 10px 20px;
     margin-bottom: 20px;
@@ -41,10 +41,8 @@
     border-radius: 4px;
     font-weight: bold;
     transition: background-color 0.3s;
-    margin-left: 1vw;
   }
 
-  .nav-button:hover {
+  .navButton:hover {
     background-color: #0056b3;
   }
-

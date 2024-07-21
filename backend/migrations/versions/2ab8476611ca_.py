@@ -1,8 +1,8 @@
-"""Initial migration
+"""empty message
 
-Revision ID: a4b0f089dc96
+Revision ID: 2ab8476611ca
 Revises: 
-Create Date: 2024-07-14 13:58:01.988598
+Create Date: 2024-07-20 19:44:29.875143
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'a4b0f089dc96'
+revision = '2ab8476611ca'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -45,7 +45,8 @@ def upgrade():
     sa.Column('unit_price', sa.Numeric(precision=10, scale=2), nullable=False),
     sa.Column('current_stock', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('unit_of_measure', sa.String(length=20), nullable=False),
-    sa.PrimaryKeyConstraint('product_id')
+    sa.PrimaryKeyConstraint('product_id'),
+    sa.UniqueConstraint('name')
     )
     op.create_table('service',
     sa.Column('service_id', sa.Integer(), nullable=False),
@@ -68,6 +69,15 @@ def upgrade():
     sa.Column('address', sa.Text(), nullable=True),
     sa.PrimaryKeyConstraint('supplier_id')
     )
+    op.create_table('user',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('username', sa.String(length=64), nullable=False),
+    sa.Column('email', sa.String(length=120), nullable=False),
+    sa.Column('password_hash', sa.String(length=256), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('email'),
+    sa.UniqueConstraint('username')
+    )
     op.create_table('incominginvoice',
     sa.Column('incoming_invoice_id', sa.Integer(), nullable=False),
     sa.Column('number', sa.String(length=50), nullable=False),
@@ -77,8 +87,6 @@ def upgrade():
     sa.Column('organization_id', sa.Integer(), nullable=True),
     sa.Column('storage_id', sa.Integer(), nullable=True),
     sa.Column('contract_number', sa.String(length=50), nullable=True),
-    sa.Column('total_amount', sa.Numeric(precision=10, scale=2), nullable=False),
-    sa.Column('total_vat', sa.Numeric(precision=10, scale=2), nullable=False),
     sa.Column('responsible_person_id', sa.Integer(), nullable=True),
     sa.Column('comment', sa.Text(), nullable=True),
     sa.ForeignKeyConstraint(['counter_agent_id'], ['supplier.supplier_id'], ),
@@ -104,8 +112,6 @@ def upgrade():
     sa.Column('customer_id', sa.Integer(), nullable=True),
     sa.Column('organization_id', sa.Integer(), nullable=True),
     sa.Column('storage_id', sa.Integer(), nullable=True),
-    sa.Column('total_amount', sa.Numeric(precision=10, scale=2), nullable=False),
-    sa.Column('total_vat', sa.Numeric(precision=10, scale=2), nullable=False),
     sa.Column('responsible_person_id', sa.Integer(), nullable=True),
     sa.Column('contract_number', sa.String(length=50), nullable=True),
     sa.Column('payment_document', sa.String(length=255), nullable=True),
@@ -120,7 +126,8 @@ def upgrade():
     op.create_table('incominginvoiceitem',
     sa.Column('incoming_invoice_item_id', sa.Integer(), nullable=False),
     sa.Column('incoming_invoice_id', sa.Integer(), nullable=True),
-    sa.Column('product_id', sa.Integer(), nullable=True),
+    sa.Column('product_name', sa.String(length=100), nullable=False),
+    sa.Column('product_description', sa.Text(), nullable=True),
     sa.Column('quantity', sa.Numeric(precision=10, scale=3), nullable=False),
     sa.Column('unit_of_measure', sa.String(length=20), nullable=False),
     sa.Column('unit_price', sa.Numeric(precision=10, scale=2), nullable=False),
@@ -128,8 +135,7 @@ def upgrade():
     sa.Column('vat_percentage', sa.Numeric(precision=5, scale=2), nullable=False),
     sa.Column('vat_amount', sa.Numeric(precision=10, scale=2), nullable=False),
     sa.Column('account_number', sa.String(length=20), nullable=True),
-    sa.ForeignKeyConstraint(['incoming_invoice_id'], ['incominginvoice.incoming_invoice_id'], ),
-    sa.ForeignKeyConstraint(['product_id'], ['product.product_id'], ),
+    sa.ForeignKeyConstraint(['incoming_invoice_id'], ['incominginvoice.incoming_invoice_id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('incoming_invoice_item_id')
     )
     op.create_table('outgoinginvoiceitem',
@@ -160,6 +166,7 @@ def downgrade():
     op.drop_table('outgoinginvoice')
     op.drop_table('inventory')
     op.drop_table('incominginvoice')
+    op.drop_table('user')
     op.drop_table('supplier')
     op.drop_table('storage')
     op.drop_table('service')

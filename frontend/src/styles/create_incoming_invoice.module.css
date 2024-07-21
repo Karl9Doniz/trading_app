@@ -1,0 +1,105 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.title {
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.invoiceSection,
+.itemsSection {
+  background-color: #f9f9f9;
+  padding: 30px;
+  border-radius: 8px;
+}
+
+.input,
+.textarea,
+select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 15px;
+}
+
+.textarea {
+  height: 100px;
+  resize: vertical;
+}
+
+.item {
+  background-color: #fff;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.addItemForm {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+
+}
+
+.button,
+.submitButton,
+.navButton,
+.removeButton {
+  padding: 8px 15px;
+  margin-left: 1vw;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-size: 15px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.button:hover,
+.submitButton:hover,
+.navButton:hover {
+  background-color: #0056b3;
+}
+
+.submitButton {
+  width: 100%;
+  margin-top: 30px;
+}
+
+.navButton {
+  display: inline-block;
+  margin-bottom: 30px;
+  font-weight: bold;
+}
+
+.removeButton {
+  background-color: #dc3545;
+  padding: 8px 15px;
+}
+
+.removeButton:hover {
+  background-color: #c82333;
+}
+
+.sectionTitle {
+  margin-bottom: 20px;
+  color: #333;
+}

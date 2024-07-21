@@ -46,7 +46,7 @@ class Supplier(db.Model):
 class Product(db.Model):
     __tablename__ = 'product'
     product_id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(100), nullable=False, unique=True)
     description = db.Column(db.Text)
     unit_price = db.Column(db.Numeric(10, 2), nullable=False)
     current_stock = db.Column(db.Numeric(10, 2), default=0)
@@ -61,7 +61,6 @@ class Service(db.Model):
 
 class IncomingInvoice(db.Model):
     __tablename__ = 'incominginvoice'
-
     incoming_invoice_id = db.Column(db.Integer, primary_key=True)
     number = db.Column(db.String(50), unique=True, nullable=False)
     date = db.Column(db.DateTime, nullable=False)
@@ -72,16 +71,14 @@ class IncomingInvoice(db.Model):
     contract_number = db.Column(db.String(50))
     responsible_person_id = db.Column(db.Integer, db.ForeignKey('employee.employee_id'))
     comment = db.Column(db.Text)
-
-    # Add this relationship
-    items = relationship("IncomingInvoiceItem", cascade="all, delete-orphan", back_populates="invoice")
+    items = db.relationship('IncomingInvoiceItem', back_populates='invoice', cascade="all, delete-orphan")
 
 class IncomingInvoiceItem(db.Model):
     __tablename__ = 'incominginvoiceitem'
-
     incoming_invoice_item_id = db.Column(db.Integer, primary_key=True)
     incoming_invoice_id = db.Column(db.Integer, db.ForeignKey('incominginvoice.incoming_invoice_id', ondelete='CASCADE'))
-    product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'))
+    product_name = db.Column(db.String(100), nullable=False)
+    product_description = db.Column(db.Text)
     quantity = db.Column(db.Numeric(10, 3), nullable=False)
     unit_of_measure = db.Column(db.String(20), nullable=False)
     unit_price = db.Column(db.Numeric(10, 2), nullable=False)
@@ -89,9 +86,7 @@ class IncomingInvoiceItem(db.Model):
     vat_percentage = db.Column(db.Numeric(5, 2), nullable=False)
     vat_amount = db.Column(db.Numeric(10, 2), nullable=False)
     account_number = db.Column(db.String(20))
-
-    # Add this relationship
-    invoice = relationship("IncomingInvoice", back_populates="items")
+    invoice = db.relationship('IncomingInvoice', back_populates='items')
 
 class Customer(db.Model):
     __tablename__ = 'customer'

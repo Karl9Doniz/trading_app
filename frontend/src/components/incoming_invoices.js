@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getIncomingInvoices } from '../services/api';
+import AuthErrorHandler from './auth/auth_error_handler';
 import '../styles/incoming_invoices.css';
 
 function IncomingInvoices() {
@@ -18,20 +19,29 @@ function IncomingInvoices() {
       setInvoices(data);
       setLoading(false);
     } catch (err) {
-      setError('Failed to fetch invoices');
+      if (err.name === 'ExpiredSignatureError') {
+        setError('Your session has expired. Please sign in again.');
+      } else {
+        setError('Failed to fetch invoices');
+      }
       setLoading(false);
     }
   };
 
   if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
+  if (error) return <AuthErrorHandler message={error} />;
 
   return (
     <div className="incoming-invoices">
       <h2>Incoming Invoices</h2>
-      <Link to="/create-incoming-invoice" className="nav-button">
-        Create New Invoice
-      </Link>
+      <div className="button-container">
+        <Link to="/create-incoming-invoice" className="nav-button">
+          Create New Invoice
+        </Link>
+        <Link to="/products" className="nav-button">
+          View Products
+        </Link>
+      </div>
       <table>
         <thead>
           <tr>

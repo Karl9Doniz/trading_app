@@ -4,6 +4,7 @@ import SignIn from './components/auth/signin';
 import Register from './components/auth/register';
 import IncomingInvoices from './components/incoming_invoices';
 import CreateIncomingInvoice from './components/create_incoming_invoice';
+import ProductList from './components/product_list';
 
 function App() {
   return (
@@ -25,6 +26,14 @@ function App() {
             element={
               localStorage.getItem('token')
                 ? <CreateIncomingInvoice />
+                : <Navigate to="/signin" replace />
+            }
+          />
+          <Route
+            path="/products"
+            element={
+              localStorage.getItem('token')
+                ? <ProductList />
                 : <Navigate to="/signin" replace />
             }
           />
