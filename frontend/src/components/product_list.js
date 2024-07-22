@@ -25,6 +25,9 @@ function ProductList() {
       <Link to="/incoming-invoices" className={styles.navButton}>
         View Incoming Invoices
       </Link>
+      <Link to="/outgoing-invoices" className={styles.navButton}>
+        View Outgoing Invoices
+      </Link>
       <table>
         <thead>
           <tr>
@@ -32,6 +35,7 @@ function ProductList() {
             <th>Description</th>
             <th>Unit of Measure</th>
             <th>Unit Price</th>
+            <th>Current Stock</th>
           </tr>
         </thead>
         <tbody>
@@ -41,6 +45,7 @@ function ProductList() {
               <td>{product.description}</td>
               <td>{product.unit_of_measure}</td>
               <td>{product.unit_price}</td>
+              <td>{product.current_stock}</td>
             </tr>
           ))}
         </tbody>

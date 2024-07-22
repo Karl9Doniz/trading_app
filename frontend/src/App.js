@@ -6,6 +6,9 @@ import IncomingInvoices from './components/incoming_invoices';
 import CreateIncomingInvoice from './components/create_incoming_invoice';
 import ProductList from './components/product_list';
 import EditIncomingInvoice from './components/edit_incoming_invoice';
+import CreateOutgoingInvoice from './components/create_outgoing_invoice';
+import Dashboard from './components/dashboard';
+import OutgoingInvoices from './components/outgoing_invoices';
 
 function App() {
   return (
@@ -19,6 +22,14 @@ function App() {
             element={
               localStorage.getItem('token')
                 ? <IncomingInvoices />
+                : <Navigate to="/signin" replace />
+            }
+          />
+          <Route
+            path="/outgoing-invoices"
+            element={
+              localStorage.getItem('token')
+                ? <OutgoingInvoices />
                 : <Navigate to="/signin" replace />
             }
           />
@@ -46,6 +57,16 @@ function App() {
                 : <Navigate to="/signin" replace />
             }
           />
+
+          <Route
+            path="/create-outgoing-invoice"
+            element={
+              localStorage.getItem('token')
+                ? <CreateOutgoingInvoice />
+                : <Navigate to="/signin" replace />
+            }
+          />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/" element={<Navigate to="/signin" replace />} />
 
         </Routes>

@@ -1,10 +1,13 @@
 from flask_restx import Namespace, Resource, fields
-from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import (
+    create_access_token, create_refresh_token, jwt_required, get_jwt_identity
+)
 from app.models import User
 from app.extensions import db, jwt
 
 auth_ns = Namespace('user', description='Authentication operations')
 
+# Models for request and response data
 user_model = auth_ns.model('User', {
     'username': fields.String(required=True),
     'email': fields.String(required=True),
@@ -21,6 +24,7 @@ tokens_model = auth_ns.model('Tokens', {
     'refresh_token': fields.String()
 })
 
+# Endpoint to register new users
 @auth_ns.route('/register')
 class Register(Resource):
     @auth_ns.expect(user_model)
@@ -33,6 +37,7 @@ class Register(Resource):
         db.session.commit()
         return user, 201
 
+# Endpoint to login users and issue tokens
 @auth_ns.route('/login')
 class Login(Resource):
     @auth_ns.expect(login_model)
@@ -46,6 +51,7 @@ class Login(Resource):
             return {'access_token': access_token, 'refresh_token': refresh_token}
         auth_ns.abort(401, 'Invalid username or password')
 
+# Endpoint to refresh access tokens
 @auth_ns.route('/refresh')
 class Refresh(Resource):
     @jwt_required(refresh=True)

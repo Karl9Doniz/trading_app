@@ -212,7 +212,7 @@ function CreateIncomingInvoice() {
                 <input
                 type="text"
                 name="product_description"
-                value={currentItem.product_description}
+                value={currentItem.description}
                 onChange={handleItemChange}
                 placeholder="Product Description"
                 className={styles.input}

@@ -230,7 +230,7 @@ function EditIncomingInvoice() {
                             <input
                                 type="text"
                                 name="product_description"
-                                value={currentItem.product_description}
+                                value={currentItem.description}
                                 onChange={handleCurrentItemChange}
                                 placeholder="Product Description"
                                 className={styles.input}

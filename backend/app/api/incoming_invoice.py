@@ -98,7 +98,6 @@ class IncomingInvoiceList(Resource):
 class IncomingInvoiceID(Resource):
     @api.doc('get_incoming_invoice')
     @api.marshal_with(incoming_invoice_model)
-    @jwt_required()
     def get(self, id):
         invoice = IncomingInvoice.query.filter_by(incoming_invoice_id=id).first_or_404()
         return invoice
@@ -106,7 +105,6 @@ class IncomingInvoiceID(Resource):
     @api.doc('update_incoming_invoice')
     @api.expect(incoming_invoice_model)
     @api.marshal_with(incoming_invoice_model)
-    @jwt_required()
     def patch(self, id):
         invoice = IncomingInvoice.query.filter_by(incoming_invoice_id=id).first_or_404()
         data = api.payload
@@ -143,7 +141,9 @@ class IncomingInvoiceID(Resource):
                     product = Product(
                         name=item_data['product_name'],
                         unit_price=item_data['unit_price'],
-                        unit_of_measure=item_data['unit_of_measure']
+                        unit_of_measure=item_data['unit_of_measure'],
+                        description=item_data['product_description'],
+                        current_stock=item_data['quantity']
                     )
                     db.session.add(product)
                 else:

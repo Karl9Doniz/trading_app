@@ -100,20 +100,20 @@ class OutgoingInvoice(db.Model):
     outgoing_invoice_id = db.Column(db.Integer, primary_key=True)
     number = db.Column(db.String(50), unique=True, nullable=False)
     date = db.Column(db.DateTime, nullable=False)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'))
-    organization_id = db.Column(db.Integer, db.ForeignKey('organization.organization_id'))
-    storage_id = db.Column(db.Integer, db.ForeignKey('storage.storage_id'))
-    responsible_person_id = db.Column(db.Integer, db.ForeignKey('employee.employee_id'))
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'), nullable=False)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organization.organization_id'), nullable=False)
+    storage_id = db.Column(db.Integer, db.ForeignKey('storage.storage_id'), nullable=False)
+    responsible_person_id = db.Column(db.Integer, db.ForeignKey('employee.employee_id'), nullable=False)
     contract_number = db.Column(db.String(50))
     payment_document = db.Column(db.String(255))
     comment = db.Column(db.Text)
+    items = db.relationship('OutgoingInvoiceItem', back_populates='invoice', cascade="all, delete-orphan")
 
 class OutgoingInvoiceItem(db.Model):
     __tablename__ = 'outgoinginvoiceitem'
     outgoing_invoice_item_id = db.Column(db.Integer, primary_key=True)
-    outgoing_invoice_id = db.Column(db.Integer, db.ForeignKey('outgoinginvoice.outgoing_invoice_id'))
-    product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'))
-    service_id = db.Column(db.Integer, db.ForeignKey('service.service_id'))
+    outgoing_invoice_id = db.Column(db.Integer, db.ForeignKey('outgoinginvoice.outgoing_invoice_id', ondelete='CASCADE'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'), nullable=False)
     quantity = db.Column(db.Numeric(10, 3), nullable=False)
     unit_of_measure = db.Column(db.String(20), nullable=False)
     unit_price = db.Column(db.Numeric(10, 2), nullable=False)
@@ -122,6 +122,7 @@ class OutgoingInvoiceItem(db.Model):
     vat_amount = db.Column(db.Numeric(10, 2), nullable=False)
     discount = db.Column(db.Numeric(10, 2), default=0)
     account_number = db.Column(db.String(20))
+    invoice = db.relationship('OutgoingInvoice', back_populates='items')
 
 class Inventory(db.Model):
     __tablename__ = 'inventory'

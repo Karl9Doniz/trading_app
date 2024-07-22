@@ -41,6 +41,7 @@
     border-radius: 4px;
     font-weight: bold;
     transition: background-color 0.3s;
+    margin-left: 0.5vw;
   }
 
   .navButton:hover {

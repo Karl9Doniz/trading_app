@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { loginUser } from '../../services/api';
 import '../../styles/auth.css';
-import { useNavigate } from 'react-router-dom';
 
 function SignIn() {
   const [username, setUsername] = useState('');
@@ -17,7 +16,8 @@ function SignIn() {
       const response = await loginUser(username, password);
       localStorage.setItem('token', response.access_token);
       setMessage('Login successful!');
-      navigate('/incoming-invoices');
+      // Redirect to the dashboard instead of incoming-invoices
+      navigate('/dashboard');
     } catch (error) {
       setMessage('Login failed. Please check your credentials.');
       console.error('Login error', error);

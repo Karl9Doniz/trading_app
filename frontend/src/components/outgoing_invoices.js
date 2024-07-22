@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getIncomingInvoices } from '../services/api';
+import { getOutgoingInvoices } from '../services/api';
 import AuthErrorHandler from './auth/auth_error_handler';
 import '../styles/incoming_invoices.css';
 
-function IncomingInvoices() {
+function OutgoingInvoices() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,7 +16,7 @@ function IncomingInvoices() {
 
   const fetchInvoices = async () => {
     try {
-      const data = await getIncomingInvoices();
+      const data = await getOutgoingInvoices();
       setInvoices(data);
       setLoading(false);
     } catch (err) {
@@ -30,7 +30,7 @@ function IncomingInvoices() {
   };
 
   const handleInvoiceClick = (id) => {
-    navigate(`/edit-incoming-invoice/${id}`);
+    navigate(`/edit-outgoing-invoice/${id}`);
   };
 
   const calculateTotalPrice = (items) => {
@@ -42,9 +42,9 @@ function IncomingInvoices() {
 
   return (
     <div className="incoming-invoices">
-      <h2>Incoming Invoices</h2>
+      <h2>Outgoing Invoices</h2>
       <div className="button-container">
-        <Link to="/create-incoming-invoice" className="nav-button">
+        <Link to="/create-outgoing-invoice" className="nav-button">
           Create New Invoice
         </Link>
         <Link to="/products" className="nav-button">
@@ -62,7 +62,7 @@ function IncomingInvoices() {
             <th>Operation Type</th>
             <th>Counter Agent</th>
             <th>Contract Number</th>
-            <th>Total Price</th> {/* New column */}
+            <th>Total Price</th>
           </tr>
         </thead>
         <tbody>
@@ -73,7 +73,7 @@ function IncomingInvoices() {
               <td>{invoice.operation_type}</td>
               <td>{invoice.counter_agent_id}</td>
               <td>{invoice.contract_number}</td>
-              <td>{calculateTotalPrice(invoice.items)}</td> {/* New cell */}
+              <td>{calculateTotalPrice(invoice.items)}</td>
             </tr>
           ))}
         </tbody>
@@ -82,4 +82,4 @@ function IncomingInvoices() {
   );
 }
 
-export default IncomingInvoices;
+export default OutgoingInvoices;
