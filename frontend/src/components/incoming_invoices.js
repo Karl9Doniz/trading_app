@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getIncomingInvoices } from '../services/api';
+import { getIncomingInvoices, getSupplier } from '../services/api';
 import AuthErrorHandler from './auth/auth_error_handler';
 import '../styles/incoming_invoices.css';
 
@@ -17,7 +17,13 @@ function IncomingInvoices() {
   const fetchInvoices = async () => {
     try {
       const data = await getIncomingInvoices();
-      setInvoices(data);
+      const invoicesWithSupplierNames = await Promise.all(
+        data.map(async (invoice) => {
+          const supplier = await getSupplier(invoice.counter_agent_id);
+          return { ...invoice, supplierName: supplier.name };
+        })
+      );
+      setInvoices(invoicesWithSupplierNames);
       setLoading(false);
     } catch (err) {
       if (err.name === 'ExpiredSignatureError') {
@@ -60,9 +66,9 @@ function IncomingInvoices() {
             <th>Date</th>
             <th>Number</th>
             <th>Operation Type</th>
-            <th>Counter Agent</th>
+            <th>Supplier</th>
             <th>Contract Number</th>
-            <th>Total Price</th> {/* New column */}
+            <th>Total Price</th>
           </tr>
         </thead>
         <tbody>
@@ -71,9 +77,9 @@ function IncomingInvoices() {
               <td>{new Date(invoice.date).toLocaleDateString()}</td>
               <td>{invoice.number}</td>
               <td>{invoice.operation_type}</td>
-              <td>{invoice.counter_agent_id}</td>
+              <td>{invoice.supplierName}</td>
               <td>{invoice.contract_number}</td>
-              <td>{calculateTotalPrice(invoice.items)}</td> {/* New cell */}
+              <td>{calculateTotalPrice(invoice.items)}</td>
             </tr>
           ))}
         </tbody>

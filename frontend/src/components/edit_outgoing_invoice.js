@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getInvoiceIncoming, updateInvoice, deleteInvoice, getSuppliers, getOrganizations, getStorages, getEmployees } from '../services/api';
+import { getInvoiceOutgoing, updateInvoiceOutgoing, deleteInvoiceOutgoing, getCustomers, getOrganizations, getStorages, getEmployees } from '../services/api';
 import { Link } from 'react-router-dom';
 import styles from '../styles/edit_incoming_invoice.module.css';
 
-function EditIncomingInvoice() {
+function EditOutgoingInvoice() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [invoice, setInvoice] = useState(null);
@@ -32,12 +32,12 @@ function EditIncomingInvoice() {
     }, [id]);
 
     const fetchInvoice = async () => {
-        const data = await getInvoiceIncoming(id);
+        const data = await getInvoiceOutgoing(id);
         setInvoice(data);
     };
 
     const fetchDropdownData = async () => {
-        const suppliersData = await getSuppliers();
+        const suppliersData = await getCustomers();
         const organizationsData = await getOrganizations();
         const storagesData = await getStorages();
         const employeesData = await getEmployees();
@@ -53,7 +53,7 @@ function EditIncomingInvoice() {
     };
 
     const handleSave = async () => {
-        await updateInvoice(id, invoice);
+        await updateInvoiceOutgoing(id, invoice);
         setIsEditing(false);
     };
 
@@ -62,19 +62,15 @@ function EditIncomingInvoice() {
     };
 
     const confirmDelete = async () => {
-        await deleteInvoice(id);
-        navigate('/incoming-invoices');
+        await deleteInvoiceOutgoing(id);
+        navigate('/outgoing-invoices');
     };
 
     const handleChange = (e) => {
         setInvoice({ ...invoice, [e.target.name]: e.target.value });
     };
 
-    const handleItemChange = (index, e) => {
-        const updatedItems = [...invoice.items];
-        updatedItems[index] = { ...updatedItems[index], [e.target.name]: e.target.value };
-        setInvoice({ ...invoice, items: updatedItems });
-    };
+
 
     const handleCurrentItemChange = (e) => {
         setCurrentItem({ ...currentItem, [e.target.name]: e.target.value });
@@ -107,8 +103,8 @@ function EditIncomingInvoice() {
 
     return (
         <div className={styles.container}>
-            <h2 className={styles.title}>Edit Incoming Invoice</h2>
-            <Link to="/incoming-invoices" className={styles.navButton}>
+            <h2 className={styles.title}>Edit Outgoing Invoice</h2>
+            <Link to="/outgoing-invoices" className={styles.navButton}>
                 View All Invoices
             </Link>
             <form className={styles.form}>
@@ -317,4 +313,4 @@ function EditIncomingInvoice() {
     );
 }
 
-export default EditIncomingInvoice;
+export default EditOutgoingInvoice;

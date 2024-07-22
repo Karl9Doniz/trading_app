@@ -107,6 +107,20 @@ export const getSuppliers = async () => {
   return response.data;
 };
 
+export const getSupplier = async (id) => {
+    try {
+      const response = await api.get(`/suppliers/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching invoice:', error);
+      throw error;
+    }
+  };
+
 export const getOrganizations = async () => {
   const response = await api.get('/organizations/', {
     headers: {
@@ -152,17 +166,35 @@ export const updateInvoice = async (id, data) => {
   return response.data;
 };
 
+export const updateInvoiceOutgoing = async (id, data) => {
+    const response = await api.patch(`/outgoing-invoices/${id}`, data, {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    });
+    return response.data;
+};
+
 export const deleteInvoice = async (id) => {
-  await api.delete(`/incoming-invoices/${id}`, {
+  await api.delete(`/outgoing-invoices/${id}`, {
     headers: {
       'Authorization': `Bearer ${getToken()}`
     }
   });
 };
 
-export const getInvoice = async (id) => {
+export const deleteInvoiceOutgoing = async (id) => {
+    await api.delete(`/outgoing-invoices/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    });
+  };
+
+
+export const getInvoiceOutgoing = async (id) => {
   try {
-    const response = await api.get(`/incoming-invoices/${id}`, {
+    const response = await api.get(`/outgoing-invoices/${id}`, {
       headers: {
         'Authorization': `Bearer ${getToken()}`
       }
@@ -173,6 +205,20 @@ export const getInvoice = async (id) => {
     throw error;
   }
 };
+
+export const getInvoiceIncoming = async (id) => {
+    try {
+      const response = await api.get(`/incoming-invoices/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching invoice:', error);
+      throw error;
+    }
+  };
 
 export const createOutgoingInvoice = async (invoice) => {
   const response = await api.post('/outgoing-invoices/', invoice, {
@@ -191,3 +237,19 @@ export const getCustomers = async () => {
   });
   return response.data;
 };
+
+export const getCustomer = async (id) => {
+    try {
+      const response = await api.get(`/customers/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching invoice:', error);
+      throw error;
+    }
+  };
+
+

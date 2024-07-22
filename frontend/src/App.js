@@ -9,6 +9,7 @@ import EditIncomingInvoice from './components/edit_incoming_invoice';
 import CreateOutgoingInvoice from './components/create_outgoing_invoice';
 import Dashboard from './components/dashboard';
 import OutgoingInvoices from './components/outgoing_invoices';
+import EditOutgoingInvoice from './components/edit_outgoing_invoice';
 
 function App() {
   return (
@@ -63,6 +64,15 @@ function App() {
             element={
               localStorage.getItem('token')
                 ? <CreateOutgoingInvoice />
+                : <Navigate to="/signin" replace />
+            }
+          />
+
+          <Route
+            path="/edit-outgoing-invoice/:id"
+            element={
+              localStorage.getItem('token')
+                ? <EditOutgoingInvoice />
                 : <Navigate to="/signin" replace />
             }
           />

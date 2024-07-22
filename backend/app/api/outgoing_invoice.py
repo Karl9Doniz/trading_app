@@ -48,7 +48,6 @@ class OutgoingInvoiceList(Resource):
     def post(self):
         data = api.payload
 
-        # Create the invoice first
         new_invoice = OutgoingInvoice(
             number=data['number'],
             date=data['date'],
@@ -61,9 +60,8 @@ class OutgoingInvoiceList(Resource):
             comment=data.get('comment')
         )
         db.session.add(new_invoice)
-        db.session.flush()  # This assigns an ID to new_invoice
+        db.session.flush()
 
-        # Now add items and update product stock
         for item_data in data.get('items', []):
             product = Product.query.filter_by(name=item_data['product_name']).first()
             if not product:
@@ -73,7 +71,6 @@ class OutgoingInvoiceList(Resource):
             if product.current_stock < quantity:
                 api.abort(400, f"Not enough stock for product {product.name}. Available: {product.current_stock}, Requested: {quantity}")
 
-            # Create the invoice item
             new_item = OutgoingInvoiceItem(
                 outgoing_invoice_id=new_invoice.outgoing_invoice_id,
                 product_id=product.product_id,
@@ -88,7 +85,6 @@ class OutgoingInvoiceList(Resource):
             )
             db.session.add(new_item)
 
-            # Update product stock
             product.current_stock -= quantity
 
         db.session.commit()
@@ -112,22 +108,17 @@ class OutgoingInvoiceID(Resource):
         invoice = OutgoingInvoice.query.filter_by(outgoing_invoice_id=id).first_or_404()
         data = api.payload
 
-        # Update main invoice fields
         for key, value in data.items():
             if key != 'items':
                 setattr(invoice, key, value)
 
-        # Update items
         if 'items' in data:
-            # Restore previous stock levels
             for item in invoice.items:
                 product = Product.query.get(item.product_id)
                 product.current_stock += item.quantity
 
-            # Remove existing items
             OutgoingInvoiceItem.query.filter_by(outgoing_invoice_id=id).delete()
 
-            # Add new items and update stock
             for item_data in data['items']:
                 product = Product.query.filter_by(name=item_data['product_name']).first()
                 if not product:
@@ -151,7 +142,6 @@ class OutgoingInvoiceID(Resource):
                 )
                 db.session.add(new_item)
 
-                # Update product stock
                 product.current_stock -= quantity
 
         db.session.commit()
@@ -163,7 +153,6 @@ class OutgoingInvoiceID(Resource):
     def delete(self, id):
         invoice = OutgoingInvoice.query.filter_by(outgoing_invoice_id=id).first_or_404()
 
-        # Restore stock levels
         for item in invoice.items:
             product = Product.query.get(item.product_id)
             product.current_stock += item.quantity

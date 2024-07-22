@@ -17,6 +17,44 @@ function CreateIncomingInvoice() {
     items: []
   });
 
+  const [errors, setErrors] = useState({});
+
+  const validateInvoice = () => {
+    const newErrors = {};
+    if (!invoice.number) newErrors.number = 'Invoice number is required';
+    if (!invoice.date) newErrors.date = 'Date is required';
+    if (!invoice.counter_agent_id) newErrors.counter_agent_id = 'Supplier is required';
+    if (!invoice.operation_type) newErrors.operation_type = 'Operation type is required';
+    if (!invoice.organization_id) newErrors.organization_id = 'Organization is required';
+    if (!invoice.storage_id) newErrors.storage_id = 'Storage is required';
+    if (!invoice.responsible_person_id) newErrors.responsible_person_id = 'Responsible person is required';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateItem = () => {
+    const newErrors = {};
+    if (!currentItem.product_name) newErrors.product_name = 'Product name is required';
+    if (!currentItem.quantity || isNaN(currentItem.quantity) || currentItem.quantity <= 0) {
+      newErrors.quantity = 'Quantity must be a positive number';
+    }
+    if (!currentItem.unit_of_measure) newErrors.unit_of_measure = 'Unit of measure is required';
+    if (!currentItem.unit_price || isNaN(currentItem.unit_price) || currentItem.unit_price <= 0) {
+      newErrors.unit_price = 'Unit price must be a positive number';
+    }
+    if (!currentItem.total_price || isNaN(currentItem.total_price) || currentItem.total_price <= 0) {
+      newErrors.total_price = 'Total price must be a positive number';
+    }
+    if (!currentItem.vat_percentage || isNaN(currentItem.vat_percentage) || currentItem.vat_percentage < 0) {
+      newErrors.vat_percentage = 'VAT percentage must be a non-negative number';
+    }
+    if (!currentItem.vat_amount || isNaN(currentItem.vat_amount) || currentItem.vat_amount < 0) {
+      newErrors.vat_amount = 'VAT amount must be a non-negative number';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const [currentItem, setCurrentItem] = useState({
     product_name: '',
     product_description: '',
@@ -60,21 +98,23 @@ function CreateIncomingInvoice() {
   };
 
   const addItem = () => {
-    setInvoice({
-      ...invoice,
-      items: [...invoice.items, currentItem]
-    });
-    setCurrentItem({
-      product_name: '',
-      product_description: '',
-      quantity: '',
-      unit_of_measure: '',
-      unit_price: '',
-      total_price: '',
-      vat_percentage: '',
-      vat_amount: '',
-      account_number: ''
-    });
+    if (validateItem()) {
+      setInvoice({
+        ...invoice,
+        items: [...invoice.items, currentItem]
+      });
+      setCurrentItem({
+        product_name: '',
+        product_description: '',
+        quantity: '',
+        unit_of_measure: '',
+        unit_price: '',
+        total_price: '',
+        vat_percentage: '',
+        vat_amount: '',
+        account_number: ''
+      });
+    }
   };
 
   const removeItem = (index) => {
@@ -87,13 +127,14 @@ function CreateIncomingInvoice() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const response = await createIncomingInvoice(invoice);
-      alert('Invoice created successfully!');
-      // Reset form or redirect
-    } catch (error) {
-      console.error('Error creating invoice:', error);
-      alert('Failed to create invoice. Please try again.');
+    if (validateInvoice()) {
+      try {
+        const response = await createIncomingInvoice(invoice);
+        alert('Invoice created successfully!');
+      } catch (error) {
+        console.error('Error creating invoice:', error);
+        alert('Failed to create invoice. Please try again.');
+      }
     }
   };
 
@@ -114,6 +155,7 @@ function CreateIncomingInvoice() {
                 placeholder="Invoice Number"
                 className={styles.input}
             />
+            {errors.number && <span className={styles.errorMessage}>{errors.number}</span>}
             <input
                 type="datetime-local"
                 name="date"
@@ -121,6 +163,7 @@ function CreateIncomingInvoice() {
                 onChange={handleInvoiceChange}
                 className={styles.input}
             />
+            {errors.date && <span className={styles.errorMessage}>{errors.date}</span>}
             <select
                 name="counter_agent_id"
                 value={invoice.counter_agent_id}
@@ -132,6 +175,7 @@ function CreateIncomingInvoice() {
                 <option key={supplier.supplier_id} value={supplier.supplier_id}>{supplier.name}</option>
                 ))}
             </select>
+            {errors.supplier_id && <span className={styles.errorMessage}>{errors.supplier_id}</span>}
             <input
                 type="text"
                 name="operation_type"
