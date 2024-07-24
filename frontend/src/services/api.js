@@ -1,10 +1,12 @@
 import axios from 'axios';
 
-const API_URL = 'http://127.0.0.1:5001/api';
+const API_URL = '/api';
 
 const api = axios.create({
-  baseURL: API_URL,
-});
+    baseURL: API_URL,
+    withCredentials: true
+  });
+
 
 api.interceptors.response.use(
   (response) => response,
@@ -42,16 +44,30 @@ const refreshToken = async () => {
 };
 
 export const loginUser = async (username, password) => {
-  const response = await axios.post(`${API_URL}/user/login`, { username, password });
-  localStorage.setItem('token', response.data.access_token);
-  localStorage.setItem('refresh_token', response.data.refresh_token);
-  return response.data;
+  try {
+    const response = await api.post('/user/login', { username, password });
+    localStorage.setItem('token', response.data.access_token);
+    localStorage.setItem('refresh_token', response.data.refresh_token);
+    return response.data;
+  } catch (error) {
+    console.error('Login error:', error.response ? error.response.data : error.message);
+    throw error;
+  }
 };
 
 export const registerUser = async (username, email, password) => {
-  const response = await axios.post(`${API_URL}/user/register`, { username, email, password });
-  return response.data;
-};
+    try {
+      const response = await api.post('/user/register', { username, email, password });
+      if (response.data.access_token && response.data.refresh_token) {
+        localStorage.setItem('token', response.data.access_token);
+        localStorage.setItem('refresh_token', response.data.refresh_token);
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Registration error:', error.response ? error.response.data : error.message);
+      throw error;
+    }
+  };
 
 export const getIncomingInvoices = async () => {
   const response = await api.get('/incoming-invoices/', {
