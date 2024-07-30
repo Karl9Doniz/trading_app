@@ -1,6 +1,9 @@
+from datetime import datetime
+from flask import request
 from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import jwt_required
-from app.models import IncomingInvoice, IncomingInvoiceItem, Product
+from sqlalchemy import func
+from app.models import IncomingInvoice, IncomingInvoiceItem, Product, Storage
 from app.extensions import db
 
 api = Namespace('incoming_invoices', description='Incoming Invoice operations')
@@ -32,6 +35,17 @@ incoming_invoice_model = api.model('IncomingInvoice', {
     'items': fields.List(fields.Nested(incoming_invoice_item_model))
 })
 
+product_model = api.model('Product', {
+    'product_id': fields.Integer(readonly=True, description='The product unique identifier'),
+    'name': fields.String(required=True, description='The product name'),
+    'description': fields.String(description='The product description'),
+    'unit_price': fields.Float(required=True, description='The product unit price'),
+    'current_stock': fields.Float(description='The current stock'),
+    'unit_of_measure': fields.String(required=True, description='The unit of measure'),
+    'date': fields.DateTime(required=True, description='The creation date'),
+    'storage_id': fields.Integer(description='The storage identifier')  # Include storage ID
+})
+
 @api.route('/')
 class IncomingInvoiceList(Resource):
     @api.doc('list_incoming_invoices')
@@ -46,7 +60,6 @@ class IncomingInvoiceList(Resource):
     def post(self):
         data = api.payload
 
-        # Create the invoice first
         new_invoice = IncomingInvoice(
             number=data['number'],
             date=data['date'],
@@ -59,22 +72,25 @@ class IncomingInvoiceList(Resource):
             comment=data.get('comment')
         )
         db.session.add(new_invoice)
-        db.session.flush()  # This assigns an ID to new_invoice
+        db.session.flush()
 
-        # Now add items and create products if necessary
         for item_data in data.get('items', []):
-            # Check if the product exists, if not create it
             product = Product.query.filter_by(name=item_data['product_name']).first()
             if not product:
                 product = Product(
                     name=item_data['product_name'],
                     unit_price=item_data['unit_price'],
-                    unit_of_measure=item_data['unit_of_measure']
+                    unit_of_measure=item_data['unit_of_measure'],
+                    current_stock=item_data['quantity'],
+                    date=new_invoice.date,
+                    storage_id=new_invoice.storage_id  # Set the storage ID
                 )
                 db.session.add(product)
-                db.session.flush()
+            else:
+                product.current_stock += item_data['quantity']
+                product.date = new_invoice.date  # Update the date for existing products
+                product.storage_id = new_invoice.storage_id  # Update the storage ID for existing products
 
-            # Create the invoice item
             new_item = IncomingInvoiceItem(
                 incoming_invoice_id=new_invoice.incoming_invoice_id,
                 product_name=item_data['product_name'],
@@ -109,46 +125,54 @@ class IncomingInvoiceID(Resource):
         invoice = IncomingInvoice.query.filter_by(incoming_invoice_id=id).first_or_404()
         data = api.payload
 
-        # Update main invoice fields
         for key, value in data.items():
             if key != 'items':
                 setattr(invoice, key, value)
 
-        # Update items
         if 'items' in data:
-            # Remove existing items
-            IncomingInvoiceItem.query.filter_by(incoming_invoice_id=id).delete()
+            existing_items = {item.product_name: item for item in invoice.items}
 
-            # Add new items
+            for item in invoice.items:
+                if item.product_name not in [i['product_name'] for i in data['items']]:
+                    db.session.delete(item)
+
             for item_data in data['items']:
-                new_item = IncomingInvoiceItem(
-                    incoming_invoice_id=id,
-                    product_name=item_data['product_name'],
-                    product_description=item_data.get('product_description'),
-                    quantity=item_data['quantity'],
-                    unit_of_measure=item_data['unit_of_measure'],
-                    unit_price=item_data['unit_price'],
-                    total_price=item_data['total_price'],
-                    vat_percentage=item_data['vat_percentage'],
-                    vat_amount=item_data['vat_amount'],
-                    account_number=item_data.get('account_number')
-                )
-                db.session.add(new_item)
+                existing_item = existing_items.get(item_data['product_name'])
 
-                # Update or create product
-                product = Product.query.filter_by(name=item_data['product_name']).first()
-                if not product:
-                    product = Product(
-                        name=item_data['product_name'],
-                        unit_price=item_data['unit_price'],
-                        unit_of_measure=item_data['unit_of_measure'],
-                        description=item_data['product_description'],
-                        current_stock=item_data['quantity']
-                    )
-                    db.session.add(product)
+                if existing_item:
+                    for key, value in item_data.items():
+                        setattr(existing_item, key, value)
                 else:
-                    product.unit_price = item_data['unit_price']
-                    product.unit_of_measure = item_data['unit_of_measure']
+                    new_item = IncomingInvoiceItem(
+                        incoming_invoice_id=id,
+                        product_name=item_data['product_name'],
+                        product_description=item_data.get('product_description'),
+                        quantity=item_data['quantity'],
+                        unit_of_measure=item_data['unit_of_measure'],
+                        unit_price=item_data['unit_price'],
+                        total_price=item_data['total_price'],
+                        vat_percentage=item_data['vat_percentage'],
+                        vat_amount=item_data['vat_amount'],
+                        account_number=item_data.get('account_number')
+                    )
+                    db.session.add(new_item)
+
+                    product = Product.query.filter_by(name=item_data['product_name']).first()
+                    if not product:
+                        product = Product(
+                            name=item_data['product_name'],
+                            unit_price=item_data['unit_price'],
+                            unit_of_measure=item_data['unit_of_measure'],
+                            description=item_data.get('product_description'),
+                            current_stock=item_data['quantity'],
+                            date=invoice.date,
+                            storage_id=invoice.storage_id  # Set the storage ID for new products
+                        )
+                        db.session.add(product)
+                    else:
+                        product.current_stock += item_data['quantity']
+                        product.date = invoice.date  # Update the date for existing products
+                        product.storage_id = invoice.storage_id  # Update the storage ID for existing products
 
         db.session.commit()
         return invoice
@@ -161,3 +185,40 @@ class IncomingInvoiceID(Resource):
         db.session.delete(invoice)
         db.session.commit()
         return '', 204
+
+@api.route('/by-date-and-storage')
+class ProductsByDateAndStorage(Resource):
+    @api.doc('get_products_by_date_and_storage')
+    @api.param('date', 'The date to filter products (YYYY-MM-DD)')
+    @api.marshal_list_with(product_model)
+    def get(self):
+        date_str = request.args.get('date')
+        if not date_str:
+            return [], 400
+
+        try:
+            filter_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return [], 400
+
+        products_by_storage = db.session.query(Product, Storage.name.label('storage_name')) \
+            .join(Storage, Product.storage_id == Storage.storage_id) \
+            .filter(db.func.date(Product.date) == filter_date) \
+            .all()
+
+        result = []
+        for product, storage_name in products_by_storage:
+            product_dict = {
+                'product_id': product.product_id,
+                'name': product.name,
+                'description': product.description,
+                'unit_price': product.unit_price,
+                'current_stock': product.current_stock,
+                'unit_of_measure': product.unit_of_measure,
+                'date': product.date,
+                'storage_id': product.storage_id,
+                'storage_name': storage_name
+            }
+            result.append(product_dict)
+
+        return result

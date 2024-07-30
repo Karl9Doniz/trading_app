@@ -51,6 +51,11 @@ class Product(db.Model):
     unit_price = db.Column(db.Numeric(10, 2), nullable=False)
     current_stock = db.Column(db.Numeric(10, 2), default=0)
     unit_of_measure = db.Column(db.String(20), nullable=False)
+    date = db.Column(db.DateTime, nullable=False)
+    storage_id = db.Column(db.Integer, db.ForeignKey('storage.storage_id'), nullable=False)
+
+    storage = db.relationship('Storage', backref=db.backref('products', lazy=True))
+
 
 class Service(db.Model):
     __tablename__ = 'service'

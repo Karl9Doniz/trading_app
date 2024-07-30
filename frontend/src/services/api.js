@@ -268,4 +268,16 @@ export const getCustomer = async (id) => {
     }
   };
 
+  export const getProductsByDateAndStorage = async (date) => {
+    try {
+      const response = await axios.get(`${API_URL}/incoming-invoices/by-date-and-storage`, {
+        params: { date },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching products by date and storage:', error);
+      throw error;
+    }
+  };
+
 
