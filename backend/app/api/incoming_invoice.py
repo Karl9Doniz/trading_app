@@ -1,10 +1,10 @@
 from datetime import datetime
 from flask import request
 from flask_restx import Namespace, Resource, fields
-from flask_jwt_extended import jwt_required
 from sqlalchemy import func
 from app.models import IncomingInvoice, IncomingInvoiceItem, Product, Storage
 from app.extensions import db
+from decimal import Decimal
 
 api = Namespace('incoming_invoices', description='Incoming Invoice operations')
 
@@ -56,7 +56,6 @@ class IncomingInvoiceList(Resource):
     @api.doc('create_incoming_invoice')
     @api.expect(incoming_invoice_model)
     @api.marshal_with(incoming_invoice_model, code=201)
-    @jwt_required()
     def post(self):
         data = api.payload
 
@@ -147,12 +146,12 @@ class IncomingInvoiceID(Resource):
                         incoming_invoice_id=id,
                         product_name=item_data['product_name'],
                         product_description=item_data.get('product_description'),
-                        quantity=item_data['quantity'],
+                        quantity=Decimal(item_data['quantity']),
                         unit_of_measure=item_data['unit_of_measure'],
-                        unit_price=item_data['unit_price'],
-                        total_price=item_data['total_price'],
-                        vat_percentage=item_data['vat_percentage'],
-                        vat_amount=item_data['vat_amount'],
+                        unit_price=Decimal(item_data['unit_price']),
+                        total_price=Decimal(item_data['total_price']),
+                        vat_percentage=Decimal(item_data['vat_percentage']),
+                        vat_amount=Decimal(item_data['vat_amount']),
                         account_number=item_data.get('account_number')
                     )
                     db.session.add(new_item)
@@ -161,16 +160,16 @@ class IncomingInvoiceID(Resource):
                     if not product:
                         product = Product(
                             name=item_data['product_name'],
-                            unit_price=item_data['unit_price'],
+                            unit_price=Decimal(item_data['unit_price']),
                             unit_of_measure=item_data['unit_of_measure'],
                             description=item_data.get('product_description'),
-                            current_stock=item_data['quantity'],
+                            current_stock=Decimal(item_data['quantity']),
                             date=invoice.date,
                             storage_id=invoice.storage_id  # Set the storage ID for new products
                         )
                         db.session.add(product)
                     else:
-                        product.current_stock += item_data['quantity']
+                        product.current_stock += Decimal(item_data['quantity'])
                         product.date = invoice.date  # Update the date for existing products
                         product.storage_id = invoice.storage_id  # Update the storage ID for existing products
 
@@ -178,13 +177,12 @@ class IncomingInvoiceID(Resource):
         return invoice
 
     @api.doc('delete_incoming_invoice')
-    @api.response(204, 'Incoming Invoice deleted')
-    @jwt_required()
     def delete(self, id):
         invoice = IncomingInvoice.query.filter_by(incoming_invoice_id=id).first_or_404()
         db.session.delete(invoice)
         db.session.commit()
         return '', 204
+
 
 @api.route('/by-date-and-storage')
 class ProductsByDateAndStorage(Resource):
@@ -201,13 +199,14 @@ class ProductsByDateAndStorage(Resource):
         except ValueError:
             return [], 400
 
-        products_by_storage = db.session.query(Product, Storage.name.label('storage_name')) \
+        products_by_storage = db.session.query(Product, Storage.name.label('storage_name'), IncomingInvoiceItem.total_price) \
             .join(Storage, Product.storage_id == Storage.storage_id) \
-            .filter(db.func.date(Product.date) == filter_date) \
+            .join(IncomingInvoiceItem, Product.name == IncomingInvoiceItem.product_name) \
+            .filter(db.func.date(Product.date) <= filter_date) \
             .all()
 
         result = []
-        for product, storage_name in products_by_storage:
+        for product, storage_name, total_price in products_by_storage:
             product_dict = {
                 'product_id': product.product_id,
                 'name': product.name,
@@ -217,8 +216,11 @@ class ProductsByDateAndStorage(Resource):
                 'unit_of_measure': product.unit_of_measure,
                 'date': product.date,
                 'storage_id': product.storage_id,
-                'storage_name': storage_name
+                'storage_name': storage_name,
+                'total_price': total_price
             }
             result.append(product_dict)
 
         return result
+
+

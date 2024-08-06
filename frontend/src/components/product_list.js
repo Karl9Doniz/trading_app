@@ -6,7 +6,7 @@ import styles from '../styles/product_list.module.css';
 function ProductList() {
   const [products, setProducts] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
-  const [storageNames, setStorageNames] = useState({}); // State to store storage names
+  const [storageNames, setStorageNames] = useState({});
 
   useEffect(() => {
     if (selectedDate) {
@@ -19,23 +19,17 @@ function ProductList() {
       const productsData = await getProductsByDateAndStorage(date);
       setProducts(productsData);
 
-      // Extract unique storage IDs from products
       const storageIds = [...new Set(productsData.map(product => product.storage_id))];
-
-      // Fetch storage names for the unique storage IDs
       const storageNamesData = await Promise.all(storageIds.map(async (id) => {
-        // Replace this with the actual API call to fetch storage by ID
         const response = await fetch(`/api/storages/${id}`);
         const data = await response.json();
         return { id, name: data.name };
       }));
 
-      // Create a mapping of storage IDs to storage names
       const storageNamesMap = storageNamesData.reduce((acc, { id, name }) => {
         acc[id] = name;
         return acc;
       }, {});
-
       setStorageNames(storageNamesMap);
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -49,9 +43,10 @@ function ProductList() {
   const groupProductsByStorage = (products) => {
     return products.reduce((acc, product) => {
       if (!acc[product.storage_id]) {
-        acc[product.storage_id] = [];
+        acc[product.storage_id] = { products: [], total: 0 };
       }
-      acc[product.storage_id].push(product);
+      acc[product.storage_id].products.push(product);
+      acc[product.storage_id].total += product.unit_price * product.current_stock;  // Calculate total price
       return acc;
     }, {});
   };
@@ -61,12 +56,10 @@ function ProductList() {
   return (
     <div className={styles.productList}>
       <h1>Product Inventory</h1>
-
       <div className={styles.navigation}>
         <Link to="/incoming-invoices" className={styles.navButton}>View Incoming Invoices</Link>
         <Link to="/outgoing-invoices" className={styles.navButton}>View Outgoing Invoices</Link>
       </div>
-
       <div className={styles.dateFilter}>
         <label htmlFor="dateFilter">Filter by date:</label>
         <input
@@ -76,10 +69,9 @@ function ProductList() {
           onChange={handleDateChange}
         />
       </div>
-
-      {Object.entries(groupedProducts).map(([storageId, storageProducts]) => (
+      {Object.entries(groupedProducts).map(([storageId, { products: storageProducts, total }]) => (
         <div key={storageId} className={styles.storageGroup}>
-          <h2>{storageNames[storageId] || 'Unknown Storage'}</h2>
+          <h2>{storageNames[storageId] || 'Unknown Storage'} (Total Price: ${total.toFixed(2)})</h2>
           <table className={styles.productTable}>
             <thead>
               <tr>

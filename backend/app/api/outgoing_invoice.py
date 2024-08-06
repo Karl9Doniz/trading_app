@@ -44,7 +44,6 @@ class OutgoingInvoiceList(Resource):
     @api.doc('create_outgoing_invoice')
     @api.expect(outgoing_invoice_model)
     @api.marshal_with(outgoing_invoice_model, code=201)
-    @jwt_required()
     def post(self):
         data = api.payload
 
@@ -103,7 +102,6 @@ class OutgoingInvoiceID(Resource):
     @api.doc('update_outgoing_invoice')
     @api.expect(outgoing_invoice_model)
     @api.marshal_with(outgoing_invoice_model)
-    @jwt_required()
     def patch(self, id):
         invoice = OutgoingInvoice.query.filter_by(outgoing_invoice_id=id).first_or_404()
         data = api.payload
@@ -149,7 +147,6 @@ class OutgoingInvoiceID(Resource):
 
     @api.doc('delete_outgoing_invoice')
     @api.response(204, 'Outgoing Invoice deleted')
-    @jwt_required()
     def delete(self, id):
         invoice = OutgoingInvoice.query.filter_by(outgoing_invoice_id=id).first_or_404()
 
