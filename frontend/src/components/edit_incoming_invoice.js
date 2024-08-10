@@ -20,9 +20,7 @@ function EditIncomingInvoice() {
         quantity: '',
         unit_of_measure: '',
         unit_price: '',
-        total_price: '',
-        vat_percentage: '',
-        vat_amount: '',
+        vat_percentage: 20,
         account_number: ''
     });
 
@@ -71,8 +69,16 @@ function EditIncomingInvoice() {
     };
 
     const handleItemChange = (index, e) => {
+        const { name, value } = e.target;
         const updatedItems = [...invoice.items];
-        updatedItems[index] = { ...updatedItems[index], [e.target.name]: e.target.value };
+        updatedItems[index] = { ...updatedItems[index], [name]: value };
+
+        if (name === 'quantity' || name === 'unit_price' || name === 'vat_percentage') {
+            const item = updatedItems[index];
+            item.total_price = item.quantity * item.unit_price;
+            item.vat_amount = item.total_price * (item.vat_percentage / 100);
+        }
+
         setInvoice({ ...invoice, items: updatedItems });
     };
 
@@ -81,19 +87,29 @@ function EditIncomingInvoice() {
     };
 
     const addItem = () => {
+        const { quantity, unit_price, vat_percentage } = currentItem;
+        const totalPrice = quantity * unit_price;
+        const vatAmount = (totalPrice * (vat_percentage / 100)).toFixed(2);
+
         setInvoice({
             ...invoice,
-            items: [...invoice.items, currentItem]
+            items: [
+                ...invoice.items,
+                {
+                    ...currentItem,
+                    total_price: totalPrice,
+                    vat_amount: vatAmount
+                }
+            ]
         });
+
         setCurrentItem({
             product_name: '',
             product_description: '',
             quantity: '',
             unit_of_measure: '',
             unit_price: '',
-            total_price: '',
-            vat_percentage: '',
-            vat_amount: '',
+            vat_percentage: 20,
             account_number: ''
         });
     };
@@ -213,8 +229,9 @@ function EditIncomingInvoice() {
                     <h3 className={styles.sectionTitle}>Invoice Items</h3>
                     {invoice.items.map((item, index) => (
                         <div key={index} className={styles.item}>
-                            <p>Product: {item.product_name}, Quantity: {item.quantity}, Price: {item.unit_price}</p>
-                            <button type="button" onClick={() => removeItem(index)} className={styles.removeButton}>Remove</button>
+                        <p>Product: {item.product_name}, Quantity: {item.quantity}, Price: {item.unit_price}</p>
+                        <p>Total Price: {item.total_price}, VAT Amount: {item.vat_amount}</p>
+                        <button type="button" onClick={() => removeItem(index)} className={styles.removeButton}>Remove</button>
                         </div>
                     ))}
                     {isEditing && (

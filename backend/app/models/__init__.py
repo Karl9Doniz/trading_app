@@ -53,6 +53,7 @@ class Product(db.Model):
     unit_of_measure = db.Column(db.String(20), nullable=False)
     date = db.Column(db.DateTime, nullable=False)
     storage_id = db.Column(db.Integer, db.ForeignKey('storage.storage_id'), nullable=False)
+    outgoing_invoice_items = relationship('OutgoingInvoiceItem', cascade='all, delete', backref='product')
 
     storage = db.relationship('Storage', backref=db.backref('products', lazy=True))
 

@@ -15,15 +15,15 @@ incoming_invoice_item_model = api.model('IncomingInvoiceItem', {
     'quantity': fields.Float(required=True),
     'unit_of_measure': fields.String(required=True),
     'unit_price': fields.Float(required=True),
-    'total_price': fields.Float(required=True),
-    'vat_percentage': fields.Float(required=True),
-    'vat_amount': fields.Float(required=True),
+    'total_price': fields.Float(readonly=True),
+    'vat_percentage': fields.Float(required=True, default=20.0),
+    'vat_amount': fields.Float(readonly=True),
     'account_number': fields.String()
 })
 
 incoming_invoice_model = api.model('IncomingInvoice', {
     'incoming_invoice_id': fields.Integer(readonly=True),
-    'number': fields.String(required=True),
+    'number': fields.String(readonly=True),
     'date': fields.DateTime(required=True),
     'counter_agent_id': fields.Integer(required=True),
     'operation_type': fields.String(required=True),
@@ -43,7 +43,7 @@ product_model = api.model('Product', {
     'current_stock': fields.Float(description='The current stock'),
     'unit_of_measure': fields.String(required=True, description='The unit of measure'),
     'date': fields.DateTime(required=True, description='The creation date'),
-    'storage_id': fields.Integer(description='The storage identifier')  # Include storage ID
+    'storage_id': fields.Integer(description='The storage identifier')
 })
 
 @api.route('/')
@@ -59,8 +59,13 @@ class IncomingInvoiceList(Resource):
     def post(self):
         data = api.payload
 
+        # Generate the invoice number
+        last_invoice = IncomingInvoice.query.order_by(IncomingInvoice.incoming_invoice_id.desc()).first()
+        new_id = (last_invoice.incoming_invoice_id if last_invoice else 0) + 1
+        new_number = f"inv{new_id:03}"
+
         new_invoice = IncomingInvoice(
-            number=data['number'],
+            number=new_number,
             date=data['date'],
             counter_agent_id=data['counter_agent_id'],
             operation_type=data['operation_type'],
@@ -75,33 +80,36 @@ class IncomingInvoiceList(Resource):
 
         for item_data in data.get('items', []):
             product = Product.query.filter_by(name=item_data['product_name']).first()
+            quantity_decimal = Decimal(item_data['quantity'])
+
             if not product:
                 product = Product(
                     name=item_data['product_name'],
-                    unit_price=item_data['unit_price'],
+                    unit_price=Decimal(item_data['unit_price']),
                     unit_of_measure=item_data['unit_of_measure'],
-                    current_stock=item_data['quantity'],
+                    current_stock=quantity_decimal,
                     date=new_invoice.date,
-                    storage_id=new_invoice.storage_id  # Set the storage ID
+                    storage_id=new_invoice.storage_id
                 )
                 db.session.add(product)
             else:
-                product.current_stock += item_data['quantity']
-                product.date = new_invoice.date  # Update the date for existing products
-                product.storage_id = new_invoice.storage_id  # Update the storage ID for existing products
+                product.current_stock += quantity_decimal
+                product.date = new_invoice.date
+                product.storage_id = new_invoice.storage_id
 
             new_item = IncomingInvoiceItem(
                 incoming_invoice_id=new_invoice.incoming_invoice_id,
                 product_name=item_data['product_name'],
                 product_description=item_data.get('product_description'),
-                quantity=item_data['quantity'],
+                quantity=quantity_decimal,
                 unit_of_measure=item_data['unit_of_measure'],
-                unit_price=item_data['unit_price'],
-                total_price=item_data['total_price'],
-                vat_percentage=item_data['vat_percentage'],
-                vat_amount=item_data['vat_amount'],
+                unit_price=Decimal(item_data['unit_price']),
+                total_price=quantity_decimal * Decimal(item_data['unit_price']),
+                vat_percentage=Decimal(item_data.get('vat_percentage', 20.0)),
+                vat_amount=quantity_decimal * Decimal(item_data['unit_price']) / 6,
                 account_number=item_data.get('account_number')
             )
+
             db.session.add(new_item)
 
         db.session.commit()
@@ -199,14 +207,13 @@ class ProductsByDateAndStorage(Resource):
         except ValueError:
             return [], 400
 
-        products_by_storage = db.session.query(Product, Storage.name.label('storage_name'), IncomingInvoiceItem.total_price) \
+        products_by_storage = db.session.query(Product, Storage.name.label('storage_name')) \
             .join(Storage, Product.storage_id == Storage.storage_id) \
-            .join(IncomingInvoiceItem, Product.name == IncomingInvoiceItem.product_name) \
             .filter(db.func.date(Product.date) <= filter_date) \
             .all()
 
         result = []
-        for product, storage_name, total_price in products_by_storage:
+        for product, storage_name in products_by_storage:
             product_dict = {
                 'product_id': product.product_id,
                 'name': product.name,
@@ -216,11 +223,17 @@ class ProductsByDateAndStorage(Resource):
                 'unit_of_measure': product.unit_of_measure,
                 'date': product.date,
                 'storage_id': product.storage_id,
-                'storage_name': storage_name,
-                'total_price': total_price
+                'storage_name': storage_name
             }
             result.append(product_dict)
 
         return result
 
 
+@api.route('/next-invoice-number')
+class NextInvoiceNumber(Resource):
+    def get(self):
+        last_invoice = IncomingInvoice.query.order_by(IncomingInvoice.incoming_invoice_id.desc()).first()
+        new_id = (last_invoice.incoming_invoice_id if last_invoice else 0) + 1
+        new_number = f"inv{new_id:03}"
+        return {'next_invoice_number': new_number}

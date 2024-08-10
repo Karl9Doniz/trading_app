@@ -46,7 +46,7 @@ function ProductList() {
         acc[product.storage_id] = { products: [], total: 0 };
       }
       acc[product.storage_id].products.push(product);
-      acc[product.storage_id].total += product.unit_price * product.current_stock;  // Calculate total price
+      acc[product.storage_id].total += product.unit_price * product.current_stock;
       return acc;
     }, {});
   };

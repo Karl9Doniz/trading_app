@@ -44,6 +44,24 @@ class ProductList(Resource):
         db.session.commit()
         return new_product, 201
 
+    @api.doc('delete_product')
+    @api.param('id', 'The product identifier')
+    @api.response(404, 'Product not found')
+    @api.response(204, 'Product deleted')
+    def delete(self):
+        '''Delete a product by ID'''
+        id = request.args.get('id')
+        if not id:
+            return {'message': 'ID parameter is required'}, 400
+
+        product = Product.query.get(id)
+        if not product:
+            return {'message': 'Product not found'}, 404
+
+        db.session.delete(product)
+        db.session.commit()
+        return '', 204
+
 @api.route('/<int:id>')
 @api.param('id', 'The product identifier')
 @api.response(404, 'Product not found')
