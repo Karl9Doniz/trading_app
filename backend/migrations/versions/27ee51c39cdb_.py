@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 3f3fc2ab984a
+Revision ID: 27ee51c39cdb
 Revises: 
-Create Date: 2024-08-05 21:13:26.323737
+Create Date: 2024-08-11 17:59:15.733419
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '3f3fc2ab984a'
+revision = '27ee51c39cdb'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -143,8 +143,9 @@ def upgrade():
     )
     op.create_table('outgoinginvoiceitem',
     sa.Column('outgoing_invoice_item_id', sa.Integer(), nullable=False),
-    sa.Column('outgoing_invoice_id', sa.Integer(), nullable=False),
-    sa.Column('product_id', sa.Integer(), nullable=False),
+    sa.Column('outgoing_invoice_id', sa.Integer(), nullable=True),
+    sa.Column('product_name', sa.String(length=100), nullable=False),
+    sa.Column('product_description', sa.Text(), nullable=True),
     sa.Column('quantity', sa.Numeric(precision=10, scale=3), nullable=False),
     sa.Column('unit_of_measure', sa.String(length=20), nullable=False),
     sa.Column('unit_price', sa.Numeric(precision=10, scale=2), nullable=False),
@@ -154,7 +155,6 @@ def upgrade():
     sa.Column('discount', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('account_number', sa.String(length=20), nullable=True),
     sa.ForeignKeyConstraint(['outgoing_invoice_id'], ['outgoinginvoice.outgoing_invoice_id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['product_id'], ['product.product_id'], ),
     sa.PrimaryKeyConstraint('outgoing_invoice_item_id')
     )
     # ### end Alembic commands ###

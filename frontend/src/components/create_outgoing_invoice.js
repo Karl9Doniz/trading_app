@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { createOutgoingInvoice, getCustomers, getOrganizations, getStorages, getEmployees } from '../services/api';
+import { createIncomingInvoice, getCustomers, getOrganizations, getStorages, getEmployees, getNextOutgoingInvoiceNumber, createOutgoingInvoice } from '../services/api';
 import styles from '../styles/create_outgoing_invoice.module.css';
 
 function CreateOutgoingInvoice() {
@@ -17,19 +17,39 @@ function CreateOutgoingInvoice() {
     items: []
   });
 
-  const calculateTotals = () => {
-    const quantity = parseFloat(currentItem.quantity) || 0;
-    const unitPrice = parseFloat(currentItem.unit_price) || 0;
-    const vatPercentage = parseFloat(currentItem.vat_percentage) || 0;
+  const [errors, setErrors] = useState({});
+  const [customers, setCustomers] = useState([]);
+  const [organizations, setOrganizations] = useState([]);
+  const [storages, setStorages] = useState([]);
+  const [employees, setEmployees] = useState([]);
 
-    const totalPrice = quantity * unitPrice;
-    const vatAmount = totalPrice * (vatPercentage / 100);
+  useEffect(() => {
+    fetchDropdownData();
+    fetchNextInvoiceNumber();
+  }, []);
 
-    setCurrentItem({
-      ...currentItem,
-      total_price: totalPrice.toFixed(2),
-      vat_amount: vatAmount.toFixed(2)
-    });
+  const fetchDropdownData = async () => {
+    const customersData = await getCustomers();
+    const organizationsData = await getOrganizations();
+    const storagesData = await getStorages();
+    const employeesData = await getEmployees();
+
+    setCustomers(customersData);
+    setOrganizations(organizationsData);
+    setStorages(storagesData);
+    setEmployees(employeesData);
+  };
+
+  const fetchNextInvoiceNumber = async () => {
+    try {
+      const response = await getNextOutgoingInvoiceNumber();
+      setInvoice((prevInvoice) => ({
+        ...prevInvoice,
+        number: response.next_invoice_number
+      }));
+    } catch (error) {
+      console.error('Error fetching next invoice number:', error);
+    }
   };
 
   const [currentItem, setCurrentItem] = useState({
@@ -45,28 +65,6 @@ function CreateOutgoingInvoice() {
     account_number: ''
   });
 
-  const [errors, setErrors] = useState({});
-  const [customers, setCustomers] = useState([]);
-  const [organizations, setOrganizations] = useState([]);
-  const [storages, setStorages] = useState([]);
-  const [employees, setEmployees] = useState([]);
-
-  useEffect(() => {
-    fetchDropdownData();
-  }, []);
-
-  const fetchDropdownData = async () => {
-    const customersData = await getCustomers();
-    const organizationsData = await getOrganizations();
-    const storagesData = await getStorages();
-    const employeesData = await getEmployees();
-
-    setCustomers(customersData);
-    setOrganizations(organizationsData);
-    setStorages(storagesData);
-    setEmployees(employeesData);
-  };
-
   const handleInvoiceChange = (e) => {
     const { name, value } = e.target;
     setInvoice({ ...invoice, [name]: value });
@@ -77,60 +75,33 @@ function CreateOutgoingInvoice() {
     setCurrentItem({ ...currentItem, [name]: value });
   };
 
-  const validateInvoice = () => {
-    const newErrors = {};
-    if (!invoice.number) newErrors.number = 'Invoice number is required';
-    if (!invoice.date) newErrors.date = 'Date is required';
-    if (!invoice.customer_id) newErrors.customer_id = 'Customer is required';
-    if (!invoice.organization_id) newErrors.organization_id = 'Organization is required';
-    if (!invoice.storage_id) newErrors.storage_id = 'Storage is required';
-    if (!invoice.responsible_person_id) newErrors.responsible_person_id = 'Responsible person is required';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const validateItem = () => {
-    const newErrors = {};
-    if (!currentItem.product_name) newErrors.product_name = 'Product name is required';
-    if (!currentItem.quantity || isNaN(currentItem.quantity) || currentItem.quantity <= 0) {
-      newErrors.quantity = 'Quantity must be a positive number';
-    }
-    if (!currentItem.unit_of_measure) newErrors.unit_of_measure = 'Unit of measure is required';
-    if (!currentItem.unit_price || isNaN(currentItem.unit_price) || currentItem.unit_price <= 0) {
-      newErrors.unit_price = 'Unit price must be a positive number';
-    }
-    if (!currentItem.total_price || isNaN(currentItem.total_price) || currentItem.total_price <= 0) {
-      newErrors.total_price = 'Total price must be a positive number';
-    }
-    if (!currentItem.vat_percentage || isNaN(currentItem.vat_percentage) || currentItem.vat_percentage < 0) {
-      newErrors.vat_percentage = 'VAT percentage must be a non-negative number';
-    }
-    if (!currentItem.vat_amount || isNaN(currentItem.vat_amount) || currentItem.vat_amount < 0) {
-      newErrors.vat_amount = 'VAT amount must be a non-negative number';
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const addItem = () => {
-    if (validateItem()) {
-      setInvoice({
-        ...invoice,
-        items: [...invoice.items, currentItem]
-      });
-      setCurrentItem({
-        product_name: '',
-        product_description: '',
-        quantity: '',
-        unit_of_measure: '',
-        unit_price: '',
-        total_price: '',
-        vat_percentage: '',
-        vat_amount: '',
-        discount: '',
-        account_number: ''
-      });
-    }
+    const { quantity, unit_price, vat_percentage } = currentItem;
+    const totalPrice = quantity * unit_price;
+    const vatAmount = vat_percentage === 0 ? 0 : (totalPrice / 6).toFixed(2);
+
+    setInvoice({
+      ...invoice,
+      items: [
+        ...invoice.items,
+        {
+          ...currentItem,
+          total_price: totalPrice,
+          vat_amount: vatAmount
+        }
+      ]
+    });
+
+    setCurrentItem({
+      product_name: '',
+      product_description: '',
+      quantity: '',
+      unit_of_measure: '',
+      unit_price: '',
+      vat_percentage: 20,
+      discount: '',
+      account_number: ''
+    });
   };
 
   const removeItem = (index) => {
@@ -143,15 +114,18 @@ function CreateOutgoingInvoice() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateInvoice()) {
-      try {
-        const response = await createOutgoingInvoice(invoice);
-        alert('Invoice created successfully!');
-        // Reset form or redirect
-      } catch (error) {
-        console.error('Error creating invoice:', error);
-        alert('Failed to create invoice. Please try again.');
-      }
+    try {
+      const response = await createOutgoingInvoice(invoice);
+      alert('Invoice created successfully!');
+
+      // Update the state with the generated invoice number
+      setInvoice((prevInvoice) => ({
+        ...prevInvoice,
+        number: response.number
+      }));
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      alert('Failed to create invoice. Please try again.');
     }
   };
 
@@ -169,8 +143,7 @@ function CreateOutgoingInvoice() {
               type="text"
               name="number"
               value={invoice.number}
-              onChange={handleInvoiceChange}
-              placeholder="Invoice Number"
+              readOnly
               className={styles.input}
             />
             {errors.number && <span className={styles.errorMessage}>{errors.number}</span>}
@@ -279,97 +252,61 @@ function CreateOutgoingInvoice() {
           {invoice.items.map((item, index) => (
             <div key={index} className={styles.item}>
               <p>Product: {item.product_name}, Quantity: {item.quantity}, Price: {item.unit_price}</p>
+              <p>Total Price: {item.total_price}, VAT Amount: {item.vat_amount}</p>
               <button type="button" onClick={() => removeItem(index)} className={styles.removeButton}>Remove</button>
             </div>
           ))}
           <div className={styles.addItemForm}>
-            <div className={styles.inputGroup}>
-              <input
-                type="text"
-                name="product_name"
-                value={currentItem.product_name}
-                onChange={handleItemChange}
-                placeholder="Product Name"
-                className={styles.input}
-              />
-              {errors.product_name && <span className={styles.errorMessage}>{errors.product_name}</span>}
-            </div>
-            <div className={styles.inputGroup}>
-              <input
-                type="text"
-                name="product_description"
-                value={currentItem.product_description}
-                onChange={handleItemChange}
-                placeholder="Product Description"
-                className={styles.input}
-              />
-            </div>
-            <div className={styles.inputGroup}>
+            <input
+              type="text"
+              name="product_name"
+              value={currentItem.product_name}
+              onChange={handleItemChange}
+              placeholder="Product Name"
+              className={styles.input}
+            />
+            <input
+              type="text"
+              name="product_description"
+              value={currentItem.product_description}
+              onChange={handleItemChange}
+              placeholder="Product Description"
+              className={styles.input}
+            />
             <input
               type="number"
-              step="0.001"
               name="quantity"
               value={currentItem.quantity}
               onChange={handleItemChange}
               placeholder="Quantity"
-              className={`${styles.input} ${errors.quantity ? styles.errorInput : ''}`}
+              className={styles.input}
             />
-              {errors.quantity && <span className={styles.errorMessage}>{errors.quantity}</span>}
-            </div>
-            <div className={styles.inputGroup}>
-              <input
-                type="text"
-                name="unit_of_measure"
-                value={currentItem.unit_of_measure}
-                onChange={handleItemChange}
-                placeholder="Unit of Measure"
-                className={styles.input}
-              />
-            </div>
-            <div className={styles.inputGroup}>
+            <input
+              type="text"
+              name="unit_of_measure"
+              value={currentItem.unit_of_measure}
+              onChange={handleItemChange}
+              placeholder="Unit of Measure"
+              className={styles.input}
+            />
             <input
               type="number"
-              step="0.01"
               name="unit_price"
               value={currentItem.unit_price}
               onChange={handleItemChange}
               placeholder="Unit Price"
-              className={`${styles.input} ${errors.unit_price ? styles.errorInput : ''}`}
+              className={styles.input}
             />
-              {errors.unit_price && <span className={styles.errorMessage}>{errors.unit_price}</span>}
-            </div>
-            <div className={styles.inputGroup}>
-              <input
-                type="text"
-                name="total_price"
-                value={currentItem.total_price}
-                onChange={handleItemChange}
-                placeholder="Total Price"
-                className={styles.input}
-              />
-            </div>
-            <div className={styles.inputGroup}>
-              <input
-                type="text"
-                name="vat_percentage"
-                value={currentItem.vat_percentage}
-                onChange={handleItemChange}
-                placeholder="VAT Percentage"
-                className={styles.input}
-              />
-            </div>
-            <div className={styles.inputGroup}>
-              <input
-                type="text"
-                name="vat_amount"
-                value={currentItem.vat_amount}
-                onChange={handleItemChange}
-                placeholder="VAT Amount"
-                className={styles.input}
-              />
-            </div>
-            <div className={styles.inputGroup}>
-              <input
+            <select
+              name="vat_percentage"
+              value={currentItem.vat_percentage}
+              onChange={handleItemChange}
+              className={styles.input}
+            >
+              <option value={20}>20%</option>
+              <option value={0}>0%</option>
+            </select>
+            <input
                 type="text"
                 name="discount"
                 value={currentItem.discount}
@@ -377,18 +314,15 @@ function CreateOutgoingInvoice() {
                 placeholder="Discount"
                 className={styles.input}
               />
-            </div>
-            <div className={styles.inputGroup}>
-              <input
-                type="text"
-                name="account_number"
-                value={currentItem.account_number}
-                onChange={handleItemChange}
-                placeholder="Account Number"
-                className={styles.input}
-              />
-            </div>
-            <button type="button" onClick={addItem} className={styles.addButton}>Add Item</button>
+            <input
+              type="text"
+              name="account_number"
+              value={currentItem.account_number}
+              onChange={handleItemChange}
+              placeholder="Account Number"
+              className={styles.input}
+            />
+            <button type="button" onClick={addItem} className={styles.navButton}>Add Item</button>
           </div>
         </div>
 

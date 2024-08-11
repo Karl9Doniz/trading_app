@@ -288,3 +288,11 @@ export const getCustomer = async (id) => {
     return response.json();
   };
 
+  export const getNextOutgoingInvoiceNumber = async () => {
+    const response = await fetch('/api/outgoing-invoices/next-invoice-number');
+    if (!response.ok) {
+      throw new Error('Failed to fetch next invoice number');
+    }
+    return response.json();
+  };
+

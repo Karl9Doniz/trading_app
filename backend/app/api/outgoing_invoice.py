@@ -1,8 +1,9 @@
 from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import jwt_required
+from sqlalchemy import func
 from app.models import OutgoingInvoice, OutgoingInvoiceItem, Product, Customer
 from app.extensions import db
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 api = Namespace('outgoing_invoices', description='Outgoing Invoice operations')
 
@@ -46,9 +47,13 @@ class OutgoingInvoiceList(Resource):
     @api.marshal_with(outgoing_invoice_model, code=201)
     def post(self):
         data = api.payload
+        # Generate the invoice number
+        last_invoice = OutgoingInvoice.query.order_by(OutgoingInvoice.outgoing_invoice_id.desc()).first()
+        new_id = (last_invoice.outgoing_invoice_id if last_invoice else 0) + 1
+        new_number = f"out{new_id:03}"
 
         new_invoice = OutgoingInvoice(
-            number=data['number'],
+            number=new_number,
             date=data['date'],
             customer_id=data['customer_id'],
             organization_id=data['organization_id'],
@@ -70,20 +75,36 @@ class OutgoingInvoiceList(Resource):
             if product.current_stock < quantity:
                 api.abort(400, f"Not enough stock for product {product.name}. Available: {product.current_stock}, Requested: {quantity}")
 
+            unit_price = Decimal(str(item_data['unit_price']))
+            total_price = quantity * unit_price
+
+            vat_percentage = item_data.get('vat_percentage', 20)
+            print(vat_percentage)
+            try:
+                vat_percentage = Decimal(vat_percentage)
+            except (TypeError, ValueError, InvalidOperation):
+                vat_percentage = Decimal('20')
+
+            vat_amount = total_price / 6 if vat_percentage > 0 else Decimal('0')
+
+            discount = Decimal(str(item_data.get('discount', '0')))
+            if discount > 0:
+                total_price = total_price * (1 - discount / 100)
+                vat_amount = vat_amount * (1 - discount / 100)
+
             new_item = OutgoingInvoiceItem(
                 outgoing_invoice_id=new_invoice.outgoing_invoice_id,
-                product_id=product.product_id,
+                product_name=product.name,
                 quantity=quantity,
                 unit_of_measure=item_data['unit_of_measure'],
-                unit_price=item_data['unit_price'],
-                total_price=item_data['total_price'],
-                vat_percentage=item_data['vat_percentage'],
-                vat_amount=item_data['vat_amount'],
-                discount=item_data.get('discount', '0'),
+                unit_price=unit_price,
+                total_price=total_price,
+                vat_percentage=vat_percentage,
+                vat_amount=vat_amount,
+                discount=discount,
                 account_number=item_data.get('account_number')
             )
             db.session.add(new_item)
-
             product.current_stock -= quantity
 
         db.session.commit()
@@ -112,7 +133,7 @@ class OutgoingInvoiceID(Resource):
 
         if 'items' in data:
             for item in invoice.items:
-                product = Product.query.get(item.product_id)
+                product = Product.query.filter_by(name=item.product_name).first()
                 product.current_stock += item.quantity
 
             OutgoingInvoiceItem.query.filter_by(outgoing_invoice_id=id).delete()
@@ -126,20 +147,29 @@ class OutgoingInvoiceID(Resource):
                 if product.current_stock < quantity:
                     api.abort(400, f"Not enough stock for product {product.name}. Available: {product.current_stock}, Requested: {quantity}")
 
+                unit_price = Decimal(str(item_data['unit_price']))
+                total_price = quantity * unit_price
+                vat_percentage = Decimal(str(item_data.get('vat_percentage', 20.0)))
+                vat_amount = total_price / 6 if vat_percentage > 0 else Decimal('0')
+
+                discount = Decimal(str(item_data.get('discount', '0')))
+                if discount > 0:
+                    total_price = total_price * (1 - discount / 100)
+                    vat_amount = vat_amount * (1 - discount / 100)
+
                 new_item = OutgoingInvoiceItem(
                     outgoing_invoice_id=id,
-                    product_id=product.product_id,
+                    product_name=product.name,
                     quantity=quantity,
                     unit_of_measure=item_data['unit_of_measure'],
-                    unit_price=item_data['unit_price'],
-                    total_price=item_data['total_price'],
-                    vat_percentage=item_data['vat_percentage'],
-                    vat_amount=item_data['vat_amount'],
-                    discount=item_data.get('discount', '0'),
+                    unit_price=unit_price,
+                    total_price=total_price,
+                    vat_percentage=vat_percentage,
+                    vat_amount=vat_amount,
+                    discount=discount,
                     account_number=item_data.get('account_number')
                 )
                 db.session.add(new_item)
-
                 product.current_stock -= quantity
 
         db.session.commit()
@@ -151,9 +181,17 @@ class OutgoingInvoiceID(Resource):
         invoice = OutgoingInvoice.query.filter_by(outgoing_invoice_id=id).first_or_404()
 
         for item in invoice.items:
-            product = Product.query.get(item.product_id)
+            product = Product.query.filter_by(name=item.product_name).first()
             product.current_stock += item.quantity
 
         db.session.delete(invoice)
         db.session.commit()
         return '', 204
+
+@api.route('/next-invoice-number')
+class NextInvoiceNumber(Resource):
+    def get(self):
+        last_invoice = OutgoingInvoice.query.order_by(OutgoingInvoice.outgoing_invoice_id.desc()).first()
+        new_id = (last_invoice.outgoing_invoice_id if last_invoice else 0) + 1
+        new_number = f"out{new_id:03}"
+        return {'next_invoice_number': new_number}

@@ -272,14 +272,15 @@ function CreateIncomingInvoice() {
               placeholder="Unit Price"
               className={styles.input}
             />
-            <input
-              type="number"
+            <select
               name="vat_percentage"
               value={currentItem.vat_percentage}
               onChange={handleItemChange}
-              placeholder="VAT Percentage"
               className={styles.input}
-            />
+            >
+              <option value={20}>20%</option>
+              <option value={0}>0%</option>
+            </select>
             <input
               type="text"
               name="account_number"
@@ -288,7 +289,7 @@ function CreateIncomingInvoice() {
               placeholder="Account Number"
               className={styles.input}
             />
-            <button type="button" onClick={addItem} className={styles.addButton}>Add Item</button>
+            <button type="button" onClick={addItem} className={styles.navButton}>Add Item</button>
           </div>
         </div>
 

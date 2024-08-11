@@ -59,7 +59,6 @@ class IncomingInvoiceList(Resource):
     def post(self):
         data = api.payload
 
-        # Generate the invoice number
         last_invoice = IncomingInvoice.query.order_by(IncomingInvoice.incoming_invoice_id.desc()).first()
         new_id = (last_invoice.incoming_invoice_id if last_invoice else 0) + 1
         new_number = f"inv{new_id:03}"
@@ -106,7 +105,7 @@ class IncomingInvoiceList(Resource):
                 unit_price=Decimal(item_data['unit_price']),
                 total_price=quantity_decimal * Decimal(item_data['unit_price']),
                 vat_percentage=Decimal(item_data.get('vat_percentage', 20.0)),
-                vat_amount=quantity_decimal * Decimal(item_data['unit_price']) / 6,
+                vat_amount = Decimal(item_data['quantity']) * Decimal(item_data['unit_price']) / 6 if Decimal(item_data.get('vat_percentage', 20.0)) > 0 else Decimal('0'),
                 account_number=item_data.get('account_number')
             )
 
@@ -157,9 +156,9 @@ class IncomingInvoiceID(Resource):
                         quantity=Decimal(item_data['quantity']),
                         unit_of_measure=item_data['unit_of_measure'],
                         unit_price=Decimal(item_data['unit_price']),
-                        total_price=Decimal(item_data['total_price']),
-                        vat_percentage=Decimal(item_data['vat_percentage']),
-                        vat_amount=Decimal(item_data['vat_amount']),
+                        total_price=Decimal(item_data['quantity']) * Decimal(item_data['unit_price']),
+                        vat_percentage=Decimal(item_data.get('vat_percentage', 20.0)),
+                        vat_amount=Decimal(item_data['quantity']) * Decimal(item_data['unit_price']) / 6 if Decimal(item_data.get('vat_percentage', 20.0)) > 0 else Decimal('0'),
                         account_number=item_data.get('account_number')
                     )
                     db.session.add(new_item)
@@ -173,13 +172,13 @@ class IncomingInvoiceID(Resource):
                             description=item_data.get('product_description'),
                             current_stock=Decimal(item_data['quantity']),
                             date=invoice.date,
-                            storage_id=invoice.storage_id  # Set the storage ID for new products
+                            storage_id=invoice.storage_id
                         )
                         db.session.add(product)
                     else:
                         product.current_stock += Decimal(item_data['quantity'])
-                        product.date = invoice.date  # Update the date for existing products
-                        product.storage_id = invoice.storage_id  # Update the storage ID for existing products
+                        product.date = invoice.date
+                        product.storage_id = invoice.storage_id
 
         db.session.commit()
         return invoice

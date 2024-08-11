@@ -53,8 +53,6 @@ class Product(db.Model):
     unit_of_measure = db.Column(db.String(20), nullable=False)
     date = db.Column(db.DateTime, nullable=False)
     storage_id = db.Column(db.Integer, db.ForeignKey('storage.storage_id'), nullable=False)
-    outgoing_invoice_items = relationship('OutgoingInvoiceItem', cascade='all, delete', backref='product')
-
     storage = db.relationship('Storage', backref=db.backref('products', lazy=True))
 
 
@@ -64,6 +62,13 @@ class Service(db.Model):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     unit_price = db.Column(db.Numeric(10, 2), nullable=False)
+
+class Customer(db.Model):
+    __tablename__ = 'customer'
+    customer_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    contact_info = db.Column(db.String(255))
+    address = db.Column(db.Text)
 
 class IncomingInvoice(db.Model):
     __tablename__ = 'incominginvoice'
@@ -94,13 +99,6 @@ class IncomingInvoiceItem(db.Model):
     account_number = db.Column(db.String(20))
     invoice = db.relationship('IncomingInvoice', back_populates='items')
 
-class Customer(db.Model):
-    __tablename__ = 'customer'
-    customer_id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False, unique=True)
-    contact_info = db.Column(db.String(255))
-    address = db.Column(db.Text)
-
 class OutgoingInvoice(db.Model):
     __tablename__ = 'outgoinginvoice'
     outgoing_invoice_id = db.Column(db.Integer, primary_key=True)
@@ -118,8 +116,9 @@ class OutgoingInvoice(db.Model):
 class OutgoingInvoiceItem(db.Model):
     __tablename__ = 'outgoinginvoiceitem'
     outgoing_invoice_item_id = db.Column(db.Integer, primary_key=True)
-    outgoing_invoice_id = db.Column(db.Integer, db.ForeignKey('outgoinginvoice.outgoing_invoice_id', ondelete='CASCADE'), nullable=False)
-    product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'), nullable=False)
+    outgoing_invoice_id = db.Column(db.Integer, db.ForeignKey('outgoinginvoice.outgoing_invoice_id', ondelete='CASCADE'))
+    product_name = db.Column(db.String(100), nullable=False)
+    product_description = db.Column(db.Text)
     quantity = db.Column(db.Numeric(10, 3), nullable=False)
     unit_of_measure = db.Column(db.String(20), nullable=False)
     unit_price = db.Column(db.Numeric(10, 2), nullable=False)

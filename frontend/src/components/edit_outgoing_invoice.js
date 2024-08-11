@@ -10,7 +10,7 @@ function EditOutgoingInvoice() {
     const [invoice, setInvoice] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [suppliers, setSuppliers] = useState([]);
+    const [customers, setCustomers] = useState([]);
     const [organizations, setOrganizations] = useState([]);
     const [storages, setStorages] = useState([]);
     const [employees, setEmployees] = useState([]);
@@ -37,12 +37,12 @@ function EditOutgoingInvoice() {
     };
 
     const fetchDropdownData = async () => {
-        const suppliersData = await getCustomers();
+        const customersData = await getCustomers();
         const organizationsData = await getOrganizations();
         const storagesData = await getStorages();
         const employeesData = await getEmployees();
 
-        setSuppliers(suppliersData);
+        setCustomers(customersData);
         setOrganizations(organizationsData);
         setStorages(storagesData);
         setEmployees(employeesData);
@@ -70,17 +70,33 @@ function EditOutgoingInvoice() {
         setInvoice({ ...invoice, [e.target.name]: e.target.value });
     };
 
-
+    const handleItemChange = (index, e) => {
+        const updatedItems = [...invoice.items];
+        updatedItems[index] = { ...updatedItems[index], [e.target.name]: e.target.value };
+        setInvoice({ ...invoice, items: updatedItems });
+    };
 
     const handleCurrentItemChange = (e) => {
         setCurrentItem({ ...currentItem, [e.target.name]: e.target.value });
     };
 
     const addItem = () => {
+        const { quantity, unit_price, vat_percentage } = currentItem;
+        const totalPrice = quantity * unit_price;
+        const vatAmount = vat_percentage === 0 ? 0 : (totalPrice / 6).toFixed(2);
+
         setInvoice({
-            ...invoice,
-            items: [...invoice.items, currentItem]
+          ...invoice,
+          items: [
+            ...invoice.items,
+            {
+              ...currentItem,
+              total_price: totalPrice,
+              vat_amount: vatAmount
+            }
+          ]
         });
+
         setCurrentItem({
             product_name: '',
             product_description: '',
@@ -92,7 +108,7 @@ function EditOutgoingInvoice() {
             vat_amount: '',
             account_number: ''
         });
-    };
+      };
 
     const removeItem = (index) => {
         const updatedItems = invoice.items.filter((_, i) => i !== index);
@@ -100,6 +116,7 @@ function EditOutgoingInvoice() {
     };
 
     if (!invoice) return <div>Loading...</div>;
+
 
     return (
         <div className={styles.container}>
@@ -128,26 +145,17 @@ function EditOutgoingInvoice() {
                         disabled={!isEditing}
                     />
                     <select
-                        name="counter_agent_id"
-                        value={invoice.counter_agent_id}
+                        name="customer_id"
+                        value={invoice.customer_id}
                         onChange={handleChange}
                         className={styles.input}
                         disabled={!isEditing}
                     >
                         <option value="">Select Supplier</option>
-                        {suppliers.map(supplier => (
-                            <option key={supplier.supplier_id} value={supplier.supplier_id}>{supplier.name}</option>
+                        {customers.map(customer => (
+                            <option key={customer.supplier_id} value={customer.customer_id}>{customer.name}</option>
                         ))}
                     </select>
-                    <input
-                        type="text"
-                        name="operation_type"
-                        value={invoice.operation_type}
-                        onChange={handleChange}
-                        placeholder="Operation Type"
-                        className={styles.input}
-                        disabled={!isEditing}
-                    />
                     <select
                         name="organization_id"
                         value={invoice.organization_id}
@@ -209,8 +217,9 @@ function EditOutgoingInvoice() {
                     <h3 className={styles.sectionTitle}>Invoice Items</h3>
                     {invoice.items.map((item, index) => (
                         <div key={index} className={styles.item}>
-                            <p>Product: {item.product_name}, Quantity: {item.quantity}, Price: {item.unit_price}</p>
-                            <button type="button" onClick={() => removeItem(index)} className={styles.removeButton}>Remove</button>
+                        <p>Product: {item.product_name}, Quantity: {item.quantity}, Price: {item.unit_price}</p>
+                        <p>Total Price: {item.total_price}, VAT Amount: {item.vat_amount}</p>
+                        <button type="button" onClick={() => removeItem(index)} className={styles.removeButton}>Remove</button>
                         </div>
                     ))}
                     {isEditing && (

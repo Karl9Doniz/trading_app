@@ -20,7 +20,9 @@ function EditIncomingInvoice() {
         quantity: '',
         unit_of_measure: '',
         unit_price: '',
-        vat_percentage: 20,
+        total_price: '',
+        vat_percentage: '',
+        vat_amount: '',
         account_number: ''
     });
 
@@ -69,16 +71,8 @@ function EditIncomingInvoice() {
     };
 
     const handleItemChange = (index, e) => {
-        const { name, value } = e.target;
         const updatedItems = [...invoice.items];
-        updatedItems[index] = { ...updatedItems[index], [name]: value };
-
-        if (name === 'quantity' || name === 'unit_price' || name === 'vat_percentage') {
-            const item = updatedItems[index];
-            item.total_price = item.quantity * item.unit_price;
-            item.vat_amount = item.total_price * (item.vat_percentage / 100);
-        }
-
+        updatedItems[index] = { ...updatedItems[index], [e.target.name]: e.target.value };
         setInvoice({ ...invoice, items: updatedItems });
     };
 
@@ -89,30 +83,30 @@ function EditIncomingInvoice() {
     const addItem = () => {
         const { quantity, unit_price, vat_percentage } = currentItem;
         const totalPrice = quantity * unit_price;
-        const vatAmount = (totalPrice * (vat_percentage / 100)).toFixed(2);
+        const vatAmount = vat_percentage === 0 ? 0 : (totalPrice / 6).toFixed(2);
 
         setInvoice({
-            ...invoice,
-            items: [
-                ...invoice.items,
-                {
-                    ...currentItem,
-                    total_price: totalPrice,
-                    vat_amount: vatAmount
-                }
-            ]
+          ...invoice,
+          items: [
+            ...invoice.items,
+            {
+              ...currentItem,
+              total_price: totalPrice,
+              vat_amount: vatAmount
+            }
+          ]
         });
 
         setCurrentItem({
-            product_name: '',
-            product_description: '',
-            quantity: '',
-            unit_of_measure: '',
-            unit_price: '',
-            vat_percentage: 20,
-            account_number: ''
+          product_name: '',
+          product_description: '',
+          quantity: '',
+          unit_of_measure: '',
+          unit_price: '',
+          vat_percentage: 20,
+          account_number: ''
         });
-    };
+      };
 
     const removeItem = (index) => {
         const updatedItems = invoice.items.filter((_, i) => i !== index);
@@ -134,10 +128,8 @@ function EditIncomingInvoice() {
                         type="text"
                         name="number"
                         value={invoice.number}
-                        onChange={handleChange}
-                        placeholder="Invoice Number"
+                        readOnly
                         className={styles.input}
-                        disabled={!isEditing}
                     />
                     <input
                         type="datetime-local"
@@ -229,9 +221,9 @@ function EditIncomingInvoice() {
                     <h3 className={styles.sectionTitle}>Invoice Items</h3>
                     {invoice.items.map((item, index) => (
                         <div key={index} className={styles.item}>
-                        <p>Product: {item.product_name}, Quantity: {item.quantity}, Price: {item.unit_price}</p>
-                        <p>Total Price: {item.total_price}, VAT Amount: {item.vat_amount}</p>
-                        <button type="button" onClick={() => removeItem(index)} className={styles.removeButton}>Remove</button>
+                            <p>Product: {item.product_name}, Quantity: {item.quantity}, Price: {item.unit_price}</p>
+                            <p>Total Price: {item.total_price}, VAT Amount: {item.vat_amount}</p>
+                            <button type="button" onClick={() => removeItem(index)} className={styles.removeButton}>Remove</button>
                         </div>
                     ))}
                     {isEditing && (
@@ -276,30 +268,15 @@ function EditIncomingInvoice() {
                                 placeholder="Unit Price"
                                 className={styles.input}
                             />
-                            <input
-                                type="number"
-                                name="total_price"
-                                value={currentItem.total_price}
-                                onChange={handleCurrentItemChange}
-                                placeholder="Total Price"
-                                className={styles.input}
-                            />
-                            <input
-                                type="number"
+                            <select
                                 name="vat_percentage"
                                 value={currentItem.vat_percentage}
                                 onChange={handleCurrentItemChange}
-                                placeholder="VAT Percentage"
                                 className={styles.input}
-                            />
-                            <input
-                                type="number"
-                                name="vat_amount"
-                                value={currentItem.vat_amount}
-                                onChange={handleCurrentItemChange}
-                                placeholder="VAT Amount"
-                                className={styles.input}
-                            />
+                                >
+                                <option value={20}>20%</option>
+                                <option value={0}>0%</option>
+                            </select>
                             <input
                                 type="text"
                                 name="account_number"

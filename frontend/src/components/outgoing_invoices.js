@@ -65,7 +65,6 @@ function OutgoingInvoices() {
           <tr>
             <th>Date</th>
             <th>Number</th>
-            <th>Operation Type</th>
             <th>Customer</th>
             <th>Contract Number</th>
             <th>Total Price</th>
@@ -76,7 +75,6 @@ function OutgoingInvoices() {
             <tr key={invoice.outgoing_invoice_id} onClick={() => handleInvoiceClick(invoice.outgoing_invoice_id)}>
               <td>{new Date(invoice.date).toLocaleDateString()}</td>
               <td>{invoice.number}</td>
-              <td>{invoice.operation_type}</td>
               <td>{invoice.customerName}</td>
               <td>{invoice.contract_number}</td>
               <td>{calculateTotalPrice(invoice.items)}</td>
