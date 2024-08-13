@@ -70,12 +70,6 @@ function EditIncomingInvoice() {
         setInvoice({ ...invoice, [e.target.name]: e.target.value });
     };
 
-    const handleItemChange = (index, e) => {
-        const updatedItems = [...invoice.items];
-        updatedItems[index] = { ...updatedItems[index], [e.target.name]: e.target.value };
-        setInvoice({ ...invoice, items: updatedItems });
-    };
-
     const handleCurrentItemChange = (e) => {
         setCurrentItem({ ...currentItem, [e.target.name]: e.target.value });
     };
@@ -223,7 +217,9 @@ function EditIncomingInvoice() {
                         <div key={index} className={styles.item}>
                             <p>Product: {item.product_name}, Quantity: {item.quantity}, Price: {item.unit_price}</p>
                             <p>Total Price: {item.total_price}, VAT Amount: {item.vat_amount}</p>
-                            <button type="button" onClick={() => removeItem(index)} className={styles.removeButton}>Remove</button>
+                            {isEditing && (
+                                <button type="button" onClick={() => removeItem(index)} className={styles.removeButton}>Remove</button>
+                            )}
                         </div>
                     ))}
                     {isEditing && (

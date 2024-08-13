@@ -1,3 +1,4 @@
+import decimal
 from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import jwt_required
 from sqlalchemy import func
@@ -149,13 +150,19 @@ class OutgoingInvoiceID(Resource):
 
                 unit_price = Decimal(str(item_data['unit_price']))
                 total_price = quantity * unit_price
-                vat_percentage = Decimal(str(item_data.get('vat_percentage', 20.0)))
+                vat_percentage = item_data.get('vat_percentage')
+                if vat_percentage is not None:
+                    try:
+                        vat_percentage = Decimal(str(vat_percentage))
+                    except (TypeError, ValueError, decimal.InvalidOperation):
+                        vat_percentage = Decimal('20.0')
+                    else:
+                        vat_percentage = Decimal('20.0')
                 vat_amount = total_price / 6 if vat_percentage > 0 else Decimal('0')
 
                 discount = Decimal(str(item_data.get('discount', '0')))
                 if discount > 0:
                     total_price = total_price * (1 - discount / 100)
-                    vat_amount = vat_amount * (1 - discount / 100)
 
                 new_item = OutgoingInvoiceItem(
                     outgoing_invoice_id=id,

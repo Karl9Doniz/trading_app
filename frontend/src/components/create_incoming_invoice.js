@@ -65,6 +65,8 @@ function CreateIncomingInvoice() {
   const handleInvoiceChange = (e) => {
     const { name, value } = e.target;
     setInvoice({ ...invoice, [name]: value });
+    // Clear the error for this field when the user starts typing
+    setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
   };
 
   const handleItemChange = (e) => {
@@ -73,6 +75,10 @@ function CreateIncomingInvoice() {
   };
 
   const addItem = () => {
+    if (!validateItem()) {
+      return;
+    }
+
     const { quantity, unit_price, vat_percentage } = currentItem;
     const totalPrice = quantity * unit_price;
     const vatAmount = vat_percentage === 0 ? 0 : (totalPrice / 6).toFixed(2);
@@ -108,13 +114,40 @@ function CreateIncomingInvoice() {
     });
   };
 
+  const validateItem = () => {
+    const itemErrors = {};
+    if (!currentItem.product_name) itemErrors.product_name = 'Product name is required';
+    if (!currentItem.quantity) itemErrors.quantity = 'Quantity is required';
+    if (!currentItem.unit_price) itemErrors.unit_price = 'Unit price is required';
+
+    setErrors(prevErrors => ({ ...prevErrors, ...itemErrors }));
+    return Object.keys(itemErrors).length === 0;
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!invoice.date) newErrors.date = 'Date is required';
+    if (!invoice.counter_agent_id) newErrors.counter_agent_id = 'Supplier is required';
+    if (!invoice.operation_type) newErrors.operation_type = 'Operation type is required';
+    if (!invoice.organization_id) newErrors.organization_id = 'Organization is required';
+    if (!invoice.storage_id) newErrors.storage_id = 'Storage is required';
+    if (!invoice.responsible_person_id) newErrors.responsible_person_id = 'Responsible person is required';
+    if (invoice.items.length === 0) newErrors.items = 'At least one item is required';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) {
+      alert('Please fill in all required fields');
+      return;
+    }
     try {
       const response = await createIncomingInvoice(invoice);
       alert('Invoice created successfully!');
 
-      // Update the state with the generated invoice number
       setInvoice((prevInvoice) => ({
         ...prevInvoice,
         number: response.number
@@ -141,57 +174,59 @@ function CreateIncomingInvoice() {
             readOnly
             className={styles.input}
           />
-          {errors.number && <span className={styles.errorMessage}>{errors.number}</span>}
           <input
             type="datetime-local"
             name="date"
             value={invoice.date}
             onChange={handleInvoiceChange}
-            className={styles.input}
+            className={`${styles.input} ${errors.date ? styles.inputError : ''}`}
           />
           {errors.date && <span className={styles.errorMessage}>{errors.date}</span>}
           <select
             name="counter_agent_id"
             value={invoice.counter_agent_id}
             onChange={handleInvoiceChange}
-            className={styles.input}
+            className={`${styles.input} ${errors.counter_agent_id ? styles.inputError : ''}`}
           >
             <option value="">Select Supplier</option>
             {suppliers.map(supplier => (
               <option key={supplier.supplier_id} value={supplier.supplier_id}>{supplier.name}</option>
             ))}
           </select>
-          {errors.supplier_id && <span className={styles.errorMessage}>{errors.supplier_id}</span>}
+          {errors.counter_agent_id && <span className={styles.errorMessage}>{errors.counter_agent_id}</span>}
           <input
             type="text"
             name="operation_type"
             value={invoice.operation_type}
             onChange={handleInvoiceChange}
             placeholder="Operation Type"
-            className={styles.input}
+            className={`${styles.input} ${errors.operation_type ? styles.inputError : ''}`}
           />
+          {errors.operation_type && <span className={styles.errorMessage}>{errors.operation_type}</span>}
           <select
             name="organization_id"
             value={invoice.organization_id}
             onChange={handleInvoiceChange}
-            className={styles.input}
+            className={`${styles.input} ${errors.organization_id ? styles.inputError : ''}`}
           >
             <option value="">Select Organization</option>
             {organizations.map(org => (
               <option key={org.organization_id} value={org.organization_id}>{org.name}</option>
             ))}
           </select>
+          {errors.organization_id && <span className={styles.errorMessage}>{errors.organization_id}</span>}
           <select
             name="storage_id"
             value={invoice.storage_id}
             onChange={handleInvoiceChange}
-            className={styles.input}
+            className={`${styles.input} ${errors.storage_id ? styles.inputError : ''}`}
           >
             <option value="">Select Storage</option>
             {storages.map(storage => (
               <option key={storage.storage_id} value={storage.storage_id}>{storage.name}</option>
             ))}
           </select>
+          {errors.storage_id && <span className={styles.errorMessage}>{errors.storage_id}</span>}
           <input
             type="text"
             name="contract_number"
@@ -204,7 +239,7 @@ function CreateIncomingInvoice() {
             name="responsible_person_id"
             value={invoice.responsible_person_id}
             onChange={handleInvoiceChange}
-            className={styles.input}
+            className={`${styles.input} ${errors.responsible_person_id ? styles.inputError : ''}`}
           >
             <option value="">Select Responsible Person</option>
             {employees.map(employee => (
@@ -213,6 +248,7 @@ function CreateIncomingInvoice() {
               </option>
             ))}
           </select>
+          {errors.responsible_person_id && <span className={styles.errorMessage}>{errors.responsible_person_id}</span>}
           <textarea
             name="comment"
             value={invoice.comment}
@@ -231,6 +267,7 @@ function CreateIncomingInvoice() {
               <button type="button" onClick={() => removeItem(index)} className={styles.removeButton}>Remove</button>
             </div>
           ))}
+          {errors.items && <span className={styles.errorMessage}>{errors.items}</span>}
           <div className={styles.addItemForm}>
             <input
               type="text"
@@ -238,8 +275,9 @@ function CreateIncomingInvoice() {
               value={currentItem.product_name}
               onChange={handleItemChange}
               placeholder="Product Name"
-              className={styles.input}
+              className={`${styles.input} ${errors.product_name ? styles.inputError : ''}`}
             />
+            {errors.product_name && <span className={styles.errorMessage}>{errors.product_name}</span>}
             <input
               type="text"
               name="product_description"
@@ -254,8 +292,9 @@ function CreateIncomingInvoice() {
               value={currentItem.quantity}
               onChange={handleItemChange}
               placeholder="Quantity"
-              className={styles.input}
+              className={`${styles.input} ${errors.quantity ? styles.inputError : ''}`}
             />
+            {errors.quantity && <span className={styles.errorMessage}>{errors.quantity}</span>}
             <input
               type="text"
               name="unit_of_measure"
@@ -270,8 +309,9 @@ function CreateIncomingInvoice() {
               value={currentItem.unit_price}
               onChange={handleItemChange}
               placeholder="Unit Price"
-              className={styles.input}
+              className={`${styles.input} ${errors.unit_price ? styles.inputError : ''}`}
             />
+            {errors.unit_price && <span className={styles.errorMessage}>{errors.unit_price}</span>}
             <select
               name="vat_percentage"
               value={currentItem.vat_percentage}

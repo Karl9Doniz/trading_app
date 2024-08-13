@@ -1,4 +1,5 @@
 from datetime import datetime
+import decimal
 from flask import request
 from flask_restx import Namespace, Resource, fields
 from sqlalchemy import func
@@ -149,6 +150,15 @@ class IncomingInvoiceID(Resource):
                     for key, value in item_data.items():
                         setattr(existing_item, key, value)
                 else:
+                    vat_percentage = item_data.get('vat_percentage')
+                    if vat_percentage is not None:
+                        try:
+                            vat_percentage = Decimal(str(vat_percentage))
+                        except (TypeError, ValueError, decimal.InvalidOperation):
+                            vat_percentage = Decimal('20.0')
+                    else:
+                        vat_percentage = Decimal('20.0')
+
                     new_item = IncomingInvoiceItem(
                         incoming_invoice_id=id,
                         product_name=item_data['product_name'],
@@ -157,8 +167,8 @@ class IncomingInvoiceID(Resource):
                         unit_of_measure=item_data['unit_of_measure'],
                         unit_price=Decimal(item_data['unit_price']),
                         total_price=Decimal(item_data['quantity']) * Decimal(item_data['unit_price']),
-                        vat_percentage=Decimal(item_data.get('vat_percentage', 20.0)),
-                        vat_amount=Decimal(item_data['quantity']) * Decimal(item_data['unit_price']) / 6 if Decimal(item_data.get('vat_percentage', 20.0)) > 0 else Decimal('0'),
+                        vat_percentage=vat_percentage,
+                        vat_amount=Decimal(item_data['quantity']) * Decimal(item_data['unit_price']) / 6 if vat_percentage > 0 else Decimal('0'),
                         account_number=item_data.get('account_number')
                     )
                     db.session.add(new_item)

@@ -264,28 +264,21 @@ function EditOutgoingInvoice() {
                                 placeholder="Unit Price"
                                 className={styles.input}
                             />
-                            <input
-                                type="number"
-                                name="total_price"
-                                value={currentItem.total_price}
-                                onChange={handleCurrentItemChange}
-                                placeholder="Total Price"
-                                className={styles.input}
-                            />
-                            <input
-                                type="number"
+                            <select
                                 name="vat_percentage"
                                 value={currentItem.vat_percentage}
-                                onChange={handleCurrentItemChange}
-                                placeholder="VAT Percentage"
+                                onChange={handleItemChange}
                                 className={styles.input}
-                            />
+                                >
+                                <option value={20}>20%</option>
+                                <option value={0}>0%</option>
+                                </select>
                             <input
-                                type="number"
-                                name="vat_amount"
-                                value={currentItem.vat_amount}
+                                type="text"
+                                name="discount"
+                                value={currentItem.discount}
                                 onChange={handleCurrentItemChange}
-                                placeholder="VAT Amount"
+                                placeholder="Discount"
                                 className={styles.input}
                             />
                             <input

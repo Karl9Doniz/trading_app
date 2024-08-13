@@ -118,7 +118,6 @@ function CreateOutgoingInvoice() {
       const response = await createOutgoingInvoice(invoice);
       alert('Invoice created successfully!');
 
-      // Update the state with the generated invoice number
       setInvoice((prevInvoice) => ({
         ...prevInvoice,
         number: response.number
