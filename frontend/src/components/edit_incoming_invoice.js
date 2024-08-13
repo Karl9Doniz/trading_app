@@ -14,6 +14,7 @@ function EditIncomingInvoice() {
     const [organizations, setOrganizations] = useState([]);
     const [storages, setStorages] = useState([]);
     const [employees, setEmployees] = useState([]);
+    const [errors, setErrors] = useState({});
     const [currentItem, setCurrentItem] = useState({
         product_name: '',
         product_description: '',
@@ -52,9 +53,33 @@ function EditIncomingInvoice() {
         setIsEditing(true);
     };
 
+    const validateForm = () => {
+        const newErrors = {};
+        if (!invoice.date) newErrors.date = 'Date is required';
+        if (!invoice.counter_agent_id) newErrors.counter_agent_id = 'Supplier is required';
+        if (!invoice.operation_type) newErrors.operation_type = 'Operation type is required';
+        if (!invoice.organization_id) newErrors.organization_id = 'Organization is required';
+        if (!invoice.storage_id) newErrors.storage_id = 'Storage is required';
+        if (!invoice.responsible_person_id) newErrors.responsible_person_id = 'Responsible person is required';
+        if (invoice.items.length === 0) newErrors.items = 'At least one item is required';
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSave = async () => {
-        await updateInvoice(id, invoice);
-        setIsEditing(false);
+        if (!validateForm()) {
+            alert('Please fill in all required fields');
+            return;
+        }
+        try {
+            await updateInvoice(id, invoice);
+            setIsEditing(false);
+            alert('Invoice updated successfully!');
+        } catch (error) {
+            console.error('Error updating invoice:', error);
+            alert('Failed to update invoice. Please try again.');
+        }
     };
 
     const handleDelete = async () => {
@@ -62,19 +87,43 @@ function EditIncomingInvoice() {
     };
 
     const confirmDelete = async () => {
-        await deleteInvoice(id);
-        navigate('/incoming-invoices');
+        try {
+            await deleteInvoice(id);
+            navigate('/incoming-invoices');
+            alert('Invoice deleted successfully!');
+        } catch (error) {
+            console.error('Error deleting invoice:', error);
+            alert('Failed to delete invoice. Please try again.');
+        }
     };
 
     const handleChange = (e) => {
-        setInvoice({ ...invoice, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setInvoice({ ...invoice, [name]: value });
+        setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
     };
 
     const handleCurrentItemChange = (e) => {
-        setCurrentItem({ ...currentItem, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setCurrentItem({ ...currentItem, [name]: value });
+        setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
+    };
+
+    const validateItem = () => {
+        const itemErrors = {};
+        if (!currentItem.product_name) itemErrors.product_name = 'Product name is required';
+        if (!currentItem.quantity) itemErrors.quantity = 'Quantity is required';
+        if (!currentItem.unit_price) itemErrors.unit_price = 'Unit price is required';
+
+        setErrors(prevErrors => ({ ...prevErrors, ...itemErrors }));
+        return Object.keys(itemErrors).length === 0;
     };
 
     const addItem = () => {
+        if (!validateItem()) {
+            return;
+        }
+
         const { quantity, unit_price, vat_percentage } = currentItem;
         const totalPrice = quantity * unit_price;
         const vatAmount = vat_percentage === 0 ? 0 : (totalPrice / 6).toFixed(2);
@@ -100,7 +149,7 @@ function EditIncomingInvoice() {
           vat_percentage: 20,
           account_number: ''
         });
-      };
+    };
 
     const removeItem = (index) => {
         const updatedItems = invoice.items.filter((_, i) => i !== index);
@@ -130,14 +179,15 @@ function EditIncomingInvoice() {
                         name="date"
                         value={invoice.date}
                         onChange={handleChange}
-                        className={styles.input}
+                        className={`${styles.input} ${errors.date ? styles.inputError : ''}`}
                         disabled={!isEditing}
                     />
+                    {errors.date && <span className={styles.errorMessage}>{errors.date}</span>}
                     <select
                         name="counter_agent_id"
                         value={invoice.counter_agent_id}
                         onChange={handleChange}
-                        className={styles.input}
+                        className={`${styles.input} ${errors.counter_agent_id ? styles.inputError : ''}`}
                         disabled={!isEditing}
                     >
                         <option value="">Select Supplier</option>
@@ -145,20 +195,22 @@ function EditIncomingInvoice() {
                             <option key={supplier.supplier_id} value={supplier.supplier_id}>{supplier.name}</option>
                         ))}
                     </select>
+                    {errors.counter_agent_id && <span className={styles.errorMessage}>{errors.counter_agent_id}</span>}
                     <input
                         type="text"
                         name="operation_type"
                         value={invoice.operation_type}
                         onChange={handleChange}
                         placeholder="Operation Type"
-                        className={styles.input}
+                        className={`${styles.input} ${errors.operation_type ? styles.inputError : ''}`}
                         disabled={!isEditing}
                     />
+                    {errors.operation_type && <span className={styles.errorMessage}>{errors.operation_type}</span>}
                     <select
                         name="organization_id"
                         value={invoice.organization_id}
                         onChange={handleChange}
-                        className={styles.input}
+                        className={`${styles.input} ${errors.organization_id ? styles.inputError : ''}`}
                         disabled={!isEditing}
                     >
                         <option value="">Select Organization</option>
@@ -166,11 +218,12 @@ function EditIncomingInvoice() {
                             <option key={org.organization_id} value={org.organization_id}>{org.name}</option>
                         ))}
                     </select>
+                    {errors.organization_id && <span className={styles.errorMessage}>{errors.organization_id}</span>}
                     <select
                         name="storage_id"
                         value={invoice.storage_id}
                         onChange={handleChange}
-                        className={styles.input}
+                        className={`${styles.input} ${errors.storage_id ? styles.inputError : ''}`}
                         disabled={!isEditing}
                     >
                         <option value="">Select Storage</option>
@@ -178,6 +231,7 @@ function EditIncomingInvoice() {
                             <option key={storage.storage_id} value={storage.storage_id}>{storage.name}</option>
                         ))}
                     </select>
+                    {errors.storage_id && <span className={styles.errorMessage}>{errors.storage_id}</span>}
                     <input
                         type="text"
                         name="contract_number"
@@ -191,7 +245,7 @@ function EditIncomingInvoice() {
                         name="responsible_person_id"
                         value={invoice.responsible_person_id}
                         onChange={handleChange}
-                        className={styles.input}
+                        className={`${styles.input} ${errors.responsible_person_id ? styles.inputError : ''}`}
                         disabled={!isEditing}
                     >
                         <option value="">Select Responsible Person</option>
@@ -201,6 +255,7 @@ function EditIncomingInvoice() {
                             </option>
                         ))}
                     </select>
+                    {errors.responsible_person_id && <span className={styles.errorMessage}>{errors.responsible_person_id}</span>}
                     <textarea
                         name="comment"
                         value={invoice.comment}
@@ -222,6 +277,7 @@ function EditIncomingInvoice() {
                             )}
                         </div>
                     ))}
+                    {errors.items && <span className={styles.errorMessage}>{errors.items}</span>}
                     {isEditing && (
                         <div className={styles.addItemForm}>
                             <input
@@ -230,8 +286,9 @@ function EditIncomingInvoice() {
                                 value={currentItem.product_name}
                                 onChange={handleCurrentItemChange}
                                 placeholder="Product Name"
-                                className={styles.input}
+                                className={`${styles.input} ${errors.product_name ? styles.inputError : ''}`}
                             />
+                            {errors.product_name && <span className={styles.errorMessage}>{errors.product_name}</span>}
                             <input
                                 type="text"
                                 name="product_description"
@@ -246,8 +303,9 @@ function EditIncomingInvoice() {
                                 value={currentItem.quantity}
                                 onChange={handleCurrentItemChange}
                                 placeholder="Quantity"
-                                className={styles.input}
+                                className={`${styles.input} ${errors.quantity ? styles.inputError : ''}`}
                             />
+                            {errors.quantity && <span className={styles.errorMessage}>{errors.quantity}</span>}
                             <input
                                 type="text"
                                 name="unit_of_measure"
@@ -262,14 +320,15 @@ function EditIncomingInvoice() {
                                 value={currentItem.unit_price}
                                 onChange={handleCurrentItemChange}
                                 placeholder="Unit Price"
-                                className={styles.input}
+                                className={`${styles.input} ${errors.unit_price ? styles.inputError : ''}`}
                             />
+                            {errors.unit_price && <span className={styles.errorMessage}>{errors.unit_price}</span>}
                             <select
                                 name="vat_percentage"
                                 value={currentItem.vat_percentage}
                                 onChange={handleCurrentItemChange}
                                 className={styles.input}
-                                >
+                            >
                                 <option value={20}>20%</option>
                                 <option value={0}>0%</option>
                             </select>

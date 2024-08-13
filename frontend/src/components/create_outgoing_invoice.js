@@ -68,6 +68,7 @@ function CreateOutgoingInvoice() {
   const handleInvoiceChange = (e) => {
     const { name, value } = e.target;
     setInvoice({ ...invoice, [name]: value });
+    setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
   };
 
   const handleItemChange = (e) => {
@@ -76,6 +77,10 @@ function CreateOutgoingInvoice() {
   };
 
   const addItem = () => {
+    if (!validateItem()) {
+      return;
+    }
+
     const { quantity, unit_price, vat_percentage } = currentItem;
     const totalPrice = quantity * unit_price;
     const vatAmount = vat_percentage === 0 ? 0 : (totalPrice / 6).toFixed(2);
@@ -112,8 +117,35 @@ function CreateOutgoingInvoice() {
     });
   };
 
+  const validateItem = () => {
+    const itemErrors = {};
+    if (!currentItem.product_name) itemErrors.product_name = 'Product name is required';
+    if (!currentItem.quantity) itemErrors.quantity = 'Quantity is required';
+    if (!currentItem.unit_price) itemErrors.unit_price = 'Unit price is required';
+
+    setErrors(prevErrors => ({ ...prevErrors, ...itemErrors }));
+    return Object.keys(itemErrors).length === 0;
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!invoice.date) newErrors.date = 'Date is required';
+    if (!invoice.customer_id) newErrors.customer_id = 'Supplier is required';
+    if (!invoice.organization_id) newErrors.organization_id = 'Organization is required';
+    if (!invoice.storage_id) newErrors.storage_id = 'Storage is required';
+    if (!invoice.responsible_person_id) newErrors.responsible_person_id = 'Responsible person is required';
+    if (invoice.items.length === 0) newErrors.items = 'At least one item is required';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) {
+      alert('Please fill in all required fields');
+      return;
+    }
     try {
       const response = await createOutgoingInvoice(invoice);
       alert('Invoice created successfully!');
@@ -153,10 +185,10 @@ function CreateOutgoingInvoice() {
               name="date"
               value={invoice.date}
               onChange={handleInvoiceChange}
-              className={styles.input}
+              className={`${styles.input} ${errors.date ? styles.inputError : ''}`}
             />
             {errors.date && <span className={styles.errorMessage}>{errors.date}</span>}
-          </div>
+            </div>
           <div className={styles.inputGroup}>
             <select
               name="customer_id"
@@ -255,6 +287,7 @@ function CreateOutgoingInvoice() {
               <button type="button" onClick={() => removeItem(index)} className={styles.removeButton}>Remove</button>
             </div>
           ))}
+          {errors.items && <span className={styles.errorMessage}>{errors.items}</span>}
           <div className={styles.addItemForm}>
             <input
               type="text"
@@ -264,6 +297,7 @@ function CreateOutgoingInvoice() {
               placeholder="Product Name"
               className={styles.input}
             />
+            {errors.product_name && <span className={styles.errorMessage}>{errors.product_name}</span>}
             <input
               type="text"
               name="product_description"
@@ -280,6 +314,7 @@ function CreateOutgoingInvoice() {
               placeholder="Quantity"
               className={styles.input}
             />
+            {errors.quantity && <span className={styles.errorMessage}>{errors.quantity}</span>}
             <input
               type="text"
               name="unit_of_measure"
@@ -296,6 +331,7 @@ function CreateOutgoingInvoice() {
               placeholder="Unit Price"
               className={styles.input}
             />
+            {errors.unit_price && <span className={styles.errorMessage}>{errors.unit_price}</span>}
             <select
               name="vat_percentage"
               value={currentItem.vat_percentage}

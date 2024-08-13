@@ -65,7 +65,6 @@ function CreateIncomingInvoice() {
   const handleInvoiceChange = (e) => {
     const { name, value } = e.target;
     setInvoice({ ...invoice, [name]: value });
-    // Clear the error for this field when the user starts typing
     setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
   };
 
