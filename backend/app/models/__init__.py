@@ -70,16 +70,28 @@ class Customer(db.Model):
     contact_info = db.Column(db.String(255))
     address = db.Column(db.Text)
 
+from app.extensions import db
+
+class Operation(db.Model):
+    __tablename__ = 'operation'
+    operation_id = db.Column(db.Integer, primary_key=True)
+    operation_type = db.Column(db.String(100), nullable=False)
+
+class Contract(db.Model):
+    __tablename__ = 'contract'
+    contract_id = db.Column(db.Integer, primary_key=True)
+    contract_number = db.Column(db.String(50), unique=True, nullable=False)
+
 class IncomingInvoice(db.Model):
     __tablename__ = 'incominginvoice'
     incoming_invoice_id = db.Column(db.Integer, primary_key=True)
     number = db.Column(db.String(50), unique=True, nullable=False)
     date = db.Column(db.DateTime, nullable=False)
     counter_agent_id = db.Column(db.Integer, db.ForeignKey('supplier.supplier_id'))
-    operation_type = db.Column(db.String(50), nullable=False)
+    operation_id = db.Column(db.Integer, db.ForeignKey('operation.operation_id'), nullable=False)
     organization_id = db.Column(db.Integer, db.ForeignKey('organization.organization_id'))
     storage_id = db.Column(db.Integer, db.ForeignKey('storage.storage_id'))
-    contract_number = db.Column(db.String(50))
+    contract_id = db.Column(db.Integer, db.ForeignKey('contract.contract_id'))
     responsible_person_id = db.Column(db.Integer, db.ForeignKey('employee.employee_id'))
     comment = db.Column(db.Text)
     items = db.relationship('IncomingInvoiceItem', back_populates='invoice', cascade="all, delete-orphan")
@@ -108,7 +120,7 @@ class OutgoingInvoice(db.Model):
     organization_id = db.Column(db.Integer, db.ForeignKey('organization.organization_id'), nullable=False)
     storage_id = db.Column(db.Integer, db.ForeignKey('storage.storage_id'), nullable=False)
     responsible_person_id = db.Column(db.Integer, db.ForeignKey('employee.employee_id'), nullable=False)
-    contract_number = db.Column(db.String(50))
+    contract_id = db.Column(db.Integer, db.ForeignKey('contract.contract_id'))
     payment_document = db.Column(db.String(255))
     comment = db.Column(db.Text)
     items = db.relationship('OutgoingInvoiceItem', back_populates='invoice', cascade="all, delete-orphan")

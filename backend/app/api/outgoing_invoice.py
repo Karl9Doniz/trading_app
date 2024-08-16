@@ -24,10 +24,11 @@ outgoing_invoice_item_model = api.model('OutgoingInvoiceItem', {
 
 outgoing_invoice_model = api.model('OutgoingInvoice', {
     'outgoing_invoice_id': fields.Integer(readonly=True),
-    'number': fields.String(required=True),
+    'number': fields.String(readonly=True),
     'date': fields.DateTime(required=True),
     'customer_id': fields.Integer(required=True),
     'organization_id': fields.Integer(required=True),
+    'contract_id': fields.Integer(required=True),
     'storage_id': fields.Integer(required=True),
     'responsible_person_id': fields.Integer(required=True),
     'contract_number': fields.String(),
@@ -58,6 +59,7 @@ class OutgoingInvoiceList(Resource):
             date=data['date'],
             customer_id=data['customer_id'],
             organization_id=data['organization_id'],
+            contract_id=data['contract_id'],
             storage_id=data['storage_id'],
             responsible_person_id=data['responsible_person_id'],
             contract_number=data.get('contract_number'),
