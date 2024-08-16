@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { createIncomingInvoice, getCustomers, getOrganizations, getStorages, getEmployees, getNextOutgoingInvoiceNumber, createOutgoingInvoice } from '../services/api';
+import { getCustomers, getOrganizations, getStorages, getEmployees, getNextOutgoingInvoiceNumber, createOutgoingInvoice, getProductByName } from '../services/api';
 import styles from '../styles/create_outgoing_invoice.module.css';
 
 function CreateOutgoingInvoice() {
@@ -22,11 +22,14 @@ function CreateOutgoingInvoice() {
   const [organizations, setOrganizations] = useState([]);
   const [storages, setStorages] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [currentProduct, setCurrentProduct] = useState(null);
 
   useEffect(() => {
     fetchDropdownData();
     fetchNextInvoiceNumber();
   }, []);
+
+
 
   const fetchDropdownData = async () => {
     const customersData = await getCustomers();
@@ -71,13 +74,29 @@ function CreateOutgoingInvoice() {
     setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
   };
 
-  const handleItemChange = (e) => {
+  const handleItemChange = async (e) => {
     const { name, value } = e.target;
     setCurrentItem({ ...currentItem, [name]: value });
+
+    if (name === 'product_name') {
+      try {
+        const product = await getProductByName(value);
+        setCurrentProduct(product);
+      } catch (error) {
+        console.error('Error fetching product:', error);
+        setCurrentProduct(null);
+      }
+    }
   };
 
   const addItem = () => {
     if (!validateItem()) {
+      return;
+    }
+
+    if (currentProduct && currentProduct.current_stock < currentItem.quantity) {
+      const missingQuantity = currentItem.quantity - currentProduct.current_stock;
+      alert(`Not enough stock for product ${currentItem.product_name}. Missing: ${missingQuantity}`);
       return;
     }
 

@@ -296,3 +296,8 @@ export const getCustomer = async (id) => {
     return response.json();
   };
 
+  export const getProductByName = async (productName) => {
+    const response = await axios.get(`/api/products/by-name/${productName}`);
+    return response.data;
+  };
+

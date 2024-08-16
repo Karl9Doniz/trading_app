@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Box, TextField, Select, MenuItem, Button, TextareaAutosize, FormControl, InputLabel } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { createIncomingInvoice, getSuppliers, getOrganizations, getStorages, getEmployees, getNextInvoiceNumber } from '../services/api';
-import styles from '../styles/create_incoming_invoice.module.css';
+import InvoiceItemsTable from './invoice_items_table';
 
 function CreateIncomingInvoice() {
   const [invoice, setInvoice] = useState({
@@ -52,75 +53,10 @@ function CreateIncomingInvoice() {
     }
   };
 
-  const [currentItem, setCurrentItem] = useState({
-    product_name: '',
-    product_description: '',
-    quantity: '',
-    unit_of_measure: '',
-    unit_price: '',
-    vat_percentage: 20,
-    account_number: ''
-  });
-
   const handleInvoiceChange = (e) => {
     const { name, value } = e.target;
     setInvoice({ ...invoice, [name]: value });
     setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
-  };
-
-  const handleItemChange = (e) => {
-    const { name, value } = e.target;
-    setCurrentItem({ ...currentItem, [name]: value });
-  };
-
-  const addItem = () => {
-    if (!validateItem()) {
-      return;
-    }
-
-    const { quantity, unit_price, vat_percentage } = currentItem;
-    const totalPrice = quantity * unit_price;
-    const vatAmount = vat_percentage === 0 ? 0 : (totalPrice / 6).toFixed(2);
-
-    setInvoice({
-      ...invoice,
-      items: [
-        ...invoice.items,
-        {
-          ...currentItem,
-          total_price: totalPrice,
-          vat_amount: vatAmount
-        }
-      ]
-    });
-
-    setCurrentItem({
-      product_name: '',
-      product_description: '',
-      quantity: '',
-      unit_of_measure: '',
-      unit_price: '',
-      vat_percentage: 20,
-      account_number: ''
-    });
-  };
-
-  const removeItem = (index) => {
-    const updatedItems = invoice.items.filter((_, i) => i !== index);
-    setInvoice({
-      ...invoice,
-      items: updatedItems
-    });
-  };
-
-  const validateItem = () => {
-    const itemErrors = {};
-    if (!currentItem.product_name) itemErrors.product_name = 'Product name is required';
-    if (!currentItem.quantity) itemErrors.quantity = 'Quantity is required';
-    if (!currentItem.unit_price) itemErrors.unit_price = 'Unit price is required';
-
-    setErrors(prevErrors => ({ ...prevErrors, ...itemErrors }));
-    return Object.keys(itemErrors).length === 0;
   };
 
   const validateForm = () => {
@@ -139,14 +75,18 @@ function CreateIncomingInvoice() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Form is being submitted');
+
     if (!validateForm()) {
       alert('Please fill in all required fields');
       return;
     }
-    try {
-      const response = await createIncomingInvoice(invoice);
-      alert('Invoice created successfully!');
 
+    try {
+      console.log('Submitting invoice:', invoice);
+      const response = await createIncomingInvoice(invoice);
+      console.log('Response from server:', response);
+      alert('Invoice created successfully!');
       setInvoice((prevInvoice) => ({
         ...prevInvoice,
         number: response.number
@@ -157,184 +97,156 @@ function CreateIncomingInvoice() {
     }
   };
 
+
   return (
-    <div className={styles.container}>
-      <h2 className={styles.title}>Create Incoming Invoice</h2>
-      <Link to="/incoming-invoices" className={styles.navButton}>
+    <Box sx={{ p: 2 }}>
+      <h2>Create Incoming Invoice</h2>
+      <Button component={Link} to="/incoming-invoices" variant="contained" sx={{ mb: 2, mr: 2 }}>
         View All Invoices
-      </Link>
-      <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={styles.invoiceSection}>
-          <h3 className={styles.sectionTitle}>Invoice Details</h3>
-          <input
-            type="text"
-            name="number"
-            value={invoice.number}
-            readOnly
-            className={styles.input}
-          />
-          <input
-            type="datetime-local"
-            name="date"
-            value={invoice.date}
-            onChange={handleInvoiceChange}
-            className={`${styles.input} ${errors.date ? styles.inputError : ''}`}
-          />
-          {errors.date && <span className={styles.errorMessage}>{errors.date}</span>}
-          <select
-            name="counter_agent_id"
-            value={invoice.counter_agent_id}
-            onChange={handleInvoiceChange}
-            className={`${styles.input} ${errors.counter_agent_id ? styles.inputError : ''}`}
-          >
-            <option value="">Select Supplier</option>
-            {suppliers.map(supplier => (
-              <option key={supplier.supplier_id} value={supplier.supplier_id}>{supplier.name}</option>
-            ))}
-          </select>
-          {errors.counter_agent_id && <span className={styles.errorMessage}>{errors.counter_agent_id}</span>}
-          <input
-            type="text"
-            name="operation_type"
-            value={invoice.operation_type}
-            onChange={handleInvoiceChange}
-            placeholder="Operation Type"
-            className={`${styles.input} ${errors.operation_type ? styles.inputError : ''}`}
-          />
-          {errors.operation_type && <span className={styles.errorMessage}>{errors.operation_type}</span>}
-          <select
-            name="organization_id"
-            value={invoice.organization_id}
-            onChange={handleInvoiceChange}
-            className={`${styles.input} ${errors.organization_id ? styles.inputError : ''}`}
-          >
-            <option value="">Select Organization</option>
-            {organizations.map(org => (
-              <option key={org.organization_id} value={org.organization_id}>{org.name}</option>
-            ))}
-          </select>
-          {errors.organization_id && <span className={styles.errorMessage}>{errors.organization_id}</span>}
-          <select
-            name="storage_id"
-            value={invoice.storage_id}
-            onChange={handleInvoiceChange}
-            className={`${styles.input} ${errors.storage_id ? styles.inputError : ''}`}
-          >
-            <option value="">Select Storage</option>
-            {storages.map(storage => (
-              <option key={storage.storage_id} value={storage.storage_id}>{storage.name}</option>
-            ))}
-          </select>
-          {errors.storage_id && <span className={styles.errorMessage}>{errors.storage_id}</span>}
-          <input
-            type="text"
+      </Button>
+      <Button type="submit" form="invoice-form" variant="contained" color="primary" sx={{ width: 'auto', mb: 2 }}>
+        Submit
+      </Button>
+
+      <Box component="form" id="invoice-form" onSubmit={handleSubmit} sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(2, 1fr)' }}>
+        {/* First Column */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <TextField
+              label="Invoice Number"
+              name="number"
+              value={invoice.number}
+              InputProps={{ readOnly: true }}
+              size="small"
+              sx={{ width: '45%' }}
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="Date"
+              name="date"
+              type="date"
+              value={invoice.date}
+              onChange={handleInvoiceChange}
+              error={!!errors.date}
+              helperText={errors.date}
+              size="small"
+              sx={{ width: '45%' }}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Box>
+          <FormControl error={!!errors.counter_agent_id} fullWidth size="small">
+            <InputLabel id="supplier-label" shrink>Supplier</InputLabel>
+            <Select
+              labelId="supplier-label"
+              name="counter_agent_id"
+              value={invoice.counter_agent_id}
+              onChange={handleInvoiceChange}
+              label="Supplier"
+              notched
+            >
+              <MenuItem value=""><em>Select Supplier</em></MenuItem>
+              {suppliers.map(supplier => (
+                <MenuItem key={supplier.supplier_id} value={supplier.supplier_id}>{supplier.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            label="Contract Number"
             name="contract_number"
             value={invoice.contract_number}
             onChange={handleInvoiceChange}
-            placeholder="Contract Number"
-            className={styles.input}
+            fullWidth
+            size="small"
+            InputLabelProps={{ shrink: true }}
           />
-          <select
-            name="responsible_person_id"
-            value={invoice.responsible_person_id}
+        </Box>
+
+        {/* Second Column */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <TextField
+            label="Operation Type"
+            name="operation_type"
+            value={invoice.operation_type}
             onChange={handleInvoiceChange}
-            className={`${styles.input} ${errors.responsible_person_id ? styles.inputError : ''}`}
-          >
-            <option value="">Select Responsible Person</option>
-            {employees.map(employee => (
-              <option key={employee.employee_id} value={employee.employee_id}>
-                {`${employee.first_name} ${employee.last_name}`}
-              </option>
-            ))}
-          </select>
-          {errors.responsible_person_id && <span className={styles.errorMessage}>{errors.responsible_person_id}</span>}
-          <textarea
+            error={!!errors.operation_type}
+            helperText={errors.operation_type}
+            fullWidth
+            size="small"
+            InputLabelProps={{ shrink: true }}
+          />
+          <FormControl error={!!errors.organization_id} fullWidth size="small">
+            <InputLabel id="organization-label" shrink>Organization</InputLabel>
+            <Select
+              labelId="organization-label"
+              name="organization_id"
+              value={invoice.organization_id}
+              onChange={handleInvoiceChange}
+              label="Organization"
+              notched
+            >
+              <MenuItem value=""><em>Select Organization</em></MenuItem>
+              {organizations.map(org => (
+                <MenuItem key={org.organization_id} value={org.organization_id}>{org.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl error={!!errors.storage_id} fullWidth size="small">
+            <InputLabel id="storage-label" shrink>Storage</InputLabel>
+            <Select
+              labelId="storage-label"
+              name="storage_id"
+              value={invoice.storage_id}
+              onChange={handleInvoiceChange}
+              label="Storage"
+              notched
+            >
+              <MenuItem value=""><em>Select Storage</em></MenuItem>
+              {storages.map(storage => (
+                <MenuItem key={storage.storage_id} value={storage.storage_id}>{storage.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
+        {/* Invoice Items Table */}
+        <Box sx={{ gridColumn: '1 / -1' }}>
+          <InvoiceItemsTable
+            invoice={invoice}
+            setInvoice={setInvoice}
+            errors={errors}
+          />
+        </Box>
+      </Box>
+      {/* Responsible Person and Comment */}
+      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(2, 1fr)', mt: 2 }}>
+          <FormControl error={!!errors.responsible_person_id} fullWidth size="small">
+            <InputLabel id="responsible-person-label" shrink>Responsible</InputLabel>
+            <Select
+              labelId="responsible-person-label"
+              name="responsible_person_id"
+              value={invoice.responsible_person_id}
+              onChange={handleInvoiceChange}
+              label="Responsible"
+              notched
+            >
+              <MenuItem value=""><em>Select Responsible</em></MenuItem>
+              {employees.map(employee => (
+                <MenuItem key={employee.employee_id} value={employee.employee_id}>
+                  {`${employee.first_name} ${employee.last_name}`}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextareaAutosize
+            minRows={3}
             name="comment"
             value={invoice.comment}
             onChange={handleInvoiceChange}
             placeholder="Comment"
-            className={styles.textarea}
+            style={{ width: '100%' }}
           />
-        </div>
-
-        <div className={styles.itemsSection}>
-          <h3 className={styles.sectionTitle}>Invoice Items</h3>
-          {invoice.items.map((item, index) => (
-            <div key={index} className={styles.item}>
-              <p>Product: {item.product_name}, Quantity: {item.quantity}, Price: {item.unit_price}</p>
-              <p>Total Price: {item.total_price}, VAT Amount: {item.vat_amount}</p>
-              <button type="button" onClick={() => removeItem(index)} className={styles.removeButton}>Remove</button>
-            </div>
-          ))}
-          {errors.items && <span className={styles.errorMessage}>{errors.items}</span>}
-          <div className={styles.addItemForm}>
-            <input
-              type="text"
-              name="product_name"
-              value={currentItem.product_name}
-              onChange={handleItemChange}
-              placeholder="Product Name"
-              className={`${styles.input} ${errors.product_name ? styles.inputError : ''}`}
-            />
-            {errors.product_name && <span className={styles.errorMessage}>{errors.product_name}</span>}
-            <input
-              type="text"
-              name="product_description"
-              value={currentItem.product_description}
-              onChange={handleItemChange}
-              placeholder="Product Description"
-              className={styles.input}
-            />
-            <input
-              type="number"
-              name="quantity"
-              value={currentItem.quantity}
-              onChange={handleItemChange}
-              placeholder="Quantity"
-              className={`${styles.input} ${errors.quantity ? styles.inputError : ''}`}
-            />
-            {errors.quantity && <span className={styles.errorMessage}>{errors.quantity}</span>}
-            <input
-              type="text"
-              name="unit_of_measure"
-              value={currentItem.unit_of_measure}
-              onChange={handleItemChange}
-              placeholder="Unit of Measure"
-              className={styles.input}
-            />
-            <input
-              type="number"
-              name="unit_price"
-              value={currentItem.unit_price}
-              onChange={handleItemChange}
-              placeholder="Unit Price"
-              className={`${styles.input} ${errors.unit_price ? styles.inputError : ''}`}
-            />
-            {errors.unit_price && <span className={styles.errorMessage}>{errors.unit_price}</span>}
-            <select
-              name="vat_percentage"
-              value={currentItem.vat_percentage}
-              onChange={handleItemChange}
-              className={styles.input}
-            >
-              <option value={20}>20%</option>
-              <option value={0}>0%</option>
-            </select>
-            <input
-              type="text"
-              name="account_number"
-              value={currentItem.account_number}
-              onChange={handleItemChange}
-              placeholder="Account Number"
-              className={styles.input}
-            />
-            <button type="button" onClick={addItem} className={styles.navButton}>Add Item</button>
-          </div>
-        </div>
-
-        <button type="submit" className={styles.submitButton}>Submit</button>
-      </form>
-    </div>
+        </Box>
+    </Box>
   );
 }
 

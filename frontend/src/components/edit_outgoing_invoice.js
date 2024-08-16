@@ -173,6 +173,7 @@ function EditOutgoingInvoice() {
                         type="text"
                         name="number"
                         value={invoice.number}
+                        readOnly
                         onChange={handleChange}
                         placeholder="Invoice Number"
                         className={styles.input}
