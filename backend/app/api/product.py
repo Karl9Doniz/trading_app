@@ -15,7 +15,7 @@ product_model = api.model('Product', {
     'current_stock': fields.Float(description='The current stock'),
     'unit_of_measure': fields.String(required=True, description='The unit of measure'),
     'date': fields.DateTime(required=True, description='The creation date'),
-    'storage_id': fields.Integer(description='The storage identifier')  # Include storage ID
+    'storage_id': fields.Integer(description='The storage identifier')
 })
 
 @api.route('/')
@@ -38,7 +38,7 @@ class ProductList(Resource):
             current_stock=api.payload.get('current_stock', 0),
             unit_of_measure=api.payload['unit_of_measure'],
             date=datetime.utcnow(),
-            storage_id=api.payload.get('storage_id')  # Set storage ID if provided
+            storage_id=api.payload.get('storage_id')
         )
         db.session.add(new_product)
         db.session.commit()
@@ -71,6 +71,17 @@ class ProductItem(Resource):
     def get(self, id):
         '''Fetch a product given its identifier'''
         return Product.query.get_or_404(id)
+
+@api.route('/by-name/<string:name>')
+@api.param('name', 'The product name')
+@api.response(404, 'Product not found')
+class ProductByName(Resource):
+    @api.doc('get_product_by_name')
+    @api.marshal_with(product_model)
+    def get(self, name):
+        '''Fetch a product given its name'''
+        product = Product.query.filter_by(name=name).first_or_404()
+        return product
 
 @api.route('/by-date')
 class ProductsByDate(Resource):
