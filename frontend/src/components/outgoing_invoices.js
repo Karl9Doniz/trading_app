@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getOutgoingInvoices, getCustomer } from '../services/api';
+import { getOutgoingInvoices, getCustomer, getContract } from '../services/api';
+import { Box, Button} from '@mui/material';
 import AuthErrorHandler from './auth/auth_error_handler';
 import '../styles/incoming_invoices.css';
 
@@ -17,13 +18,16 @@ function OutgoingInvoices() {
   const fetchInvoices = async () => {
     try {
       const data = await getOutgoingInvoices();
-      const invoicesWithCustomerNames = await Promise.all(
+      const invoicesWithData = await Promise.all(
         data.map(async (invoice) => {
           const customer = await getCustomer(invoice.customer_id);
-          return { ...invoice, customerName: customer.name };
+          const contract = await getContract(invoice.contract_id);
+          return { ...invoice, customerName: customer.name,
+                              contractNumber: contract.contract_number
+          };
         })
       );
-      setInvoices(invoicesWithCustomerNames);
+      setInvoices(invoicesWithData);
       setLoading(false);
     } catch (err) {
       if (err.name === 'ExpiredSignatureError') {
@@ -50,15 +54,17 @@ function OutgoingInvoices() {
     <div className="incoming-invoices">
       <h2>Outgoing Invoices</h2>
       <div className="button-container">
-        <Link to="/create-outgoing-invoice" className="nav-button">
-          Create New Invoice
-        </Link>
-        <Link to="/products" className="nav-button">
+      <Box sx={{ mb: 2 }}>
+        <Button component={Link} to="/create-outgoing-invoice" variant="contained" sx={{ mr: 2 }}>
+          Create Outgoing Invoice
+        </Button>
+        <Button component={Link} to="/products" variant="contained" sx={{ mr: 2 }}>
           View Products
-        </Link>
-        <Link to="/dashboard" className="nav-button">
+        </Button>
+        <Button component={Link} to="/dashboard" variant="contained">
           To Dashboard
-        </Link>
+        </Button>
+      </Box>
       </div>
       <table>
         <thead>
@@ -76,7 +82,7 @@ function OutgoingInvoices() {
               <td>{new Date(invoice.date).toLocaleDateString()}</td>
               <td>{invoice.number}</td>
               <td>{invoice.customerName}</td>
-              <td>{invoice.contract_number}</td>
+              <td>{invoice.contractNumber}</td>
               <td>{calculateTotalPrice(invoice.items)}</td>
             </tr>
           ))}

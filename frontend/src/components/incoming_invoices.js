@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getIncomingInvoices, getSupplier } from '../services/api';
+import { getContract, getIncomingInvoices, getSupplier, getOperation } from '../services/api';
+import { Box, Button} from '@mui/material';
 import AuthErrorHandler from './auth/auth_error_handler';
 import '../styles/incoming_invoices.css';
 
@@ -17,13 +18,18 @@ function IncomingInvoices() {
   const fetchInvoices = async () => {
     try {
       const data = await getIncomingInvoices();
-      const invoicesWithSupplierNames = await Promise.all(
+      const invoicesWithData = await Promise.all(
         data.map(async (invoice) => {
           const supplier = await getSupplier(invoice.counter_agent_id);
-          return { ...invoice, supplierName: supplier.name };
+          const contract = await getContract(invoice.contract_id);
+          const operation = await getOperation(invoice.operation_id);
+          return { ...invoice, supplierName: supplier.name,
+                              contractNumber: contract.contract_number,
+                              operationType: operation.operation_type
+          };
         })
       );
-      setInvoices(invoicesWithSupplierNames);
+      setInvoices(invoicesWithData);
       setLoading(false);
     } catch (err) {
       if (err.name === 'ExpiredSignatureError') {
@@ -49,17 +55,17 @@ function IncomingInvoices() {
   return (
     <div className="incoming-invoices">
       <h2>Incoming Invoices</h2>
-      <div className="button-container">
-        <Link to="/create-incoming-invoice" className="nav-button">
-          Create New Invoice
-        </Link>
-        <Link to="/products" className="nav-button">
+      <Box sx={{ mb: 2 }}>
+        <Button component={Link} to="/create-incoming-invoice" variant="contained" sx={{ mr: 2 }}>
+          Create Incoming Invoice
+        </Button>
+        <Button component={Link} to="/products" variant="contained" sx={{ mr: 2 }}>
           View Products
-        </Link>
-        <Link to="/dashboard" className="nav-button">
+        </Button>
+        <Button component={Link} to="/dashboard" variant="contained">
           To Dashboard
-        </Link>
-      </div>
+        </Button>
+      </Box>
       <table>
         <thead>
           <tr>
@@ -76,9 +82,9 @@ function IncomingInvoices() {
             <tr key={invoice.incoming_invoice_id} onClick={() => handleInvoiceClick(invoice.incoming_invoice_id)}>
               <td>{new Date(invoice.date).toLocaleDateString()}</td>
               <td>{invoice.number}</td>
-              <td>{invoice.operation_type}</td>
+              <td>{invoice.operationType}</td>
               <td>{invoice.supplierName}</td>
-              <td>{invoice.contract_number}</td>
+              <td>{invoice.contractNumber}</td>
               <td>{calculateTotalPrice(invoice.items)}</td>
             </tr>
           ))}

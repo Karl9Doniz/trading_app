@@ -301,3 +301,49 @@ export const getCustomer = async (id) => {
     return response.data;
   };
 
+  export const getContracts = async () => {
+    const response = await api.get('/contracts/', {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    });
+    return response.data;
+  };
+
+  export const getOperations = async () => {
+    const response = await api.get('/operations/', {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    });
+    return response.data;
+  };
+
+  export const getContract = async (id) => {
+    try {
+      const response = await api.get(`/contracts/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching invoice:', error);
+      throw error;
+    }
+  };
+
+  export const getOperation = async (id) => {
+    try {
+      const response = await api.get(`/operations/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching invoice:', error);
+      throw error;
+    }
+  };
+

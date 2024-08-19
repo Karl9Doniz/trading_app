@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, TextField, Select, MenuItem, Button, TextareaAutosize, FormControl, InputLabel } from '@mui/material';
 import { Link } from 'react-router-dom';
-import { createIncomingInvoice, getSuppliers, getOrganizations, getStorages, getEmployees, getNextInvoiceNumber } from '../services/api';
+import { createIncomingInvoice, getSuppliers, getOrganizations, getStorages, getEmployees, getNextInvoiceNumber, getContracts, getOperations } from '../services/api';
 import InvoiceItemsTable from './invoice_items_table';
 
 function CreateIncomingInvoice() {
@@ -9,10 +9,10 @@ function CreateIncomingInvoice() {
     number: '',
     date: '',
     counter_agent_id: '',
-    operation_type: '',
+    operation_id: '',
     organization_id: '',
     storage_id: '',
-    contract_number: '',
+    contract_id: '',
     responsible_person_id: '',
     comment: '',
     items: []
@@ -23,6 +23,8 @@ function CreateIncomingInvoice() {
   const [organizations, setOrganizations] = useState([]);
   const [storages, setStorages] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [contracts, setContracts] = useState([]);
+  const [operations, setOperations] = useState([]);
 
   useEffect(() => {
     fetchDropdownData();
@@ -34,11 +36,15 @@ function CreateIncomingInvoice() {
     const organizationsData = await getOrganizations();
     const storagesData = await getStorages();
     const employeesData = await getEmployees();
+    const contractsData = await getContracts();
+    const operationsData = await getOperations();
 
     setSuppliers(suppliersData);
     setOrganizations(organizationsData);
     setStorages(storagesData);
     setEmployees(employeesData);
+    setContracts(contractsData);
+    setOperations(operationsData);
   };
 
   const fetchNextInvoiceNumber = async () => {
@@ -63,10 +69,11 @@ function CreateIncomingInvoice() {
     const newErrors = {};
     if (!invoice.date) newErrors.date = 'Date is required';
     if (!invoice.counter_agent_id) newErrors.counter_agent_id = 'Supplier is required';
-    if (!invoice.operation_type) newErrors.operation_type = 'Operation type is required';
+    if (!invoice.operation_id) newErrors.operation_type = 'Operation type is required';
     if (!invoice.organization_id) newErrors.organization_id = 'Organization is required';
     if (!invoice.storage_id) newErrors.storage_id = 'Storage is required';
     if (!invoice.responsible_person_id) newErrors.responsible_person_id = 'Responsible person is required';
+    if (!invoice.contract_id) newErrors.contract_id = 'Contract number requiered';
     if (invoice.items.length === 0) newErrors.items = 'At least one item is required';
 
     setErrors(newErrors);
@@ -150,30 +157,42 @@ function CreateIncomingInvoice() {
               ))}
             </Select>
           </FormControl>
-          <TextField
-            label="Contract Number"
-            name="contract_number"
-            value={invoice.contract_number}
-            onChange={handleInvoiceChange}
-            fullWidth
-            size="small"
-            InputLabelProps={{ shrink: true }}
-          />
+          <FormControl error={!!errors.contract_id} fullWidth size="small">
+            <InputLabel id="contract-label" shrink>Contract number</InputLabel>
+            <Select
+              labelId="contract-label"
+              name="contract_id"
+              value={invoice.contract_id}
+              onChange={handleInvoiceChange}
+              label="Contract number"
+              notched
+            >
+              <MenuItem value=""><em>Select Contract</em></MenuItem>
+              {contracts.map(contract => (
+                <MenuItem key={contract.contract_id} value={contract.contract_id}>{contract.contract_number}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
 
         {/* Second Column */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <TextField
-            label="Operation Type"
-            name="operation_type"
-            value={invoice.operation_type}
-            onChange={handleInvoiceChange}
-            error={!!errors.operation_type}
-            helperText={errors.operation_type}
-            fullWidth
-            size="small"
-            InputLabelProps={{ shrink: true }}
-          />
+        <FormControl error={!!errors.operation_id} fullWidth size="small">
+            <InputLabel id="operation-label" shrink>Operation type</InputLabel>
+            <Select
+              labelId="operation-label"
+              name="operation_id"
+              value={invoice.operation_id}
+              onChange={handleInvoiceChange}
+              label="Operation type"
+              notched
+            >
+              <MenuItem value=""><em>Select Operation</em></MenuItem>
+              {operations.map(operation => (
+                <MenuItem key={operation.operation_id} value={operation.operation_id}>{operation.operation_type}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <FormControl error={!!errors.organization_id} fullWidth size="small">
             <InputLabel id="organization-label" shrink>Organization</InputLabel>
             <Select

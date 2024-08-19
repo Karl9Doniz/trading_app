@@ -3,21 +3,24 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import styles from '../styles/dashboard.module.css';
+import { Box, Button} from '@mui/material';
 
 function Dashboard() {
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Welcome to the Invoice Management System</h1>
       <div className={styles.buttonContainer}>
-        <Link to="/signin" className={styles.button}>
-          Back to Sign In
-        </Link>
-        <Link to="/incoming-invoices" className={styles.button}>
-          Incoming Invoices
-        </Link>
-        <Link to="/outgoing-invoices" className={styles.button}>
+      <Box sx={{ mb: 2 }}>
+        <Button component={Link} to="/signin" variant="contained" sx={{ mr: 2 }}>
+          Back to SignIn
+        </Button>
+        <Button component={Link} to="/incoming-invoices" variant="contained" sx={{ mr: 2 }}>
+          Incoming Invocies
+        </Button>
+        <Button component={Link} to="/outgoing-invoices" variant="contained">
           Outgoing Invoices
-        </Link>
+        </Button>
+        </Box>
       </div>
     </div>
   );

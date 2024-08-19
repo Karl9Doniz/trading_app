@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getProductsByDateAndStorage } from '../services/api';
 import styles from '../styles/product_list.module.css';
+import {
+  Button,
+  Box,
+} from '@mui/material';
 
 function ProductList() {
   const [products, setProducts] = useState([]);
@@ -56,10 +60,14 @@ function ProductList() {
   return (
     <div className={styles.productList}>
       <h1>Product Inventory</h1>
-      <div className={styles.navigation}>
-        <Link to="/incoming-invoices" className={styles.navButton}>View Incoming Invoices</Link>
-        <Link to="/outgoing-invoices" className={styles.navButton}>View Outgoing Invoices</Link>
-      </div>
+      <Box sx={{ mb: 2 }}>
+        <Button component={Link} to="/incoming-invoices" variant="contained" sx={{ mr: 2 }}>
+          View Incoming Invoices
+        </Button>
+        <Button component={Link} to="/outgoing-invoices" variant="contained">
+          View Outgoing Invoices
+        </Button>
+      </Box>
       <div className={styles.dateFilter}>
         <label htmlFor="dateFilter">Filter by date:</label>
         <input
@@ -76,7 +84,6 @@ function ProductList() {
             <thead>
               <tr>
                 <th>Product Name</th>
-                <th>Description</th>
                 <th>Unit of Measure</th>
                 <th>Unit Price</th>
                 <th>Current Stock</th>
@@ -86,7 +93,6 @@ function ProductList() {
               {storageProducts.map((product) => (
                 <tr key={product.product_id}>
                   <td>{product.name}</td>
-                  <td>{product.description}</td>
                   <td>{product.unit_of_measure}</td>
                   <td>${product.unit_price.toFixed(2)}</td>
                   <td>{product.current_stock}</td>

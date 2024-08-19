@@ -62,7 +62,6 @@ class OutgoingInvoiceList(Resource):
             contract_id=data['contract_id'],
             storage_id=data['storage_id'],
             responsible_person_id=data['responsible_person_id'],
-            contract_number=data.get('contract_number'),
             payment_document=data.get('payment_document'),
             comment=data.get('comment')
         )
@@ -92,12 +91,12 @@ class OutgoingInvoiceList(Resource):
 
             discount = Decimal(str(item_data.get('discount', '0')))
             if discount > 0:
-                total_price = total_price * (1 - discount / 100)
-                vat_amount = vat_amount * (1 - discount / 100)
+                total_price = total_price * (100 - discount / 100)
 
             new_item = OutgoingInvoiceItem(
                 outgoing_invoice_id=new_invoice.outgoing_invoice_id,
                 product_name=product.name,
+                product_description=item_data.get('product_description'),
                 quantity=quantity,
                 unit_of_measure=item_data['unit_of_measure'],
                 unit_price=unit_price,
@@ -169,6 +168,7 @@ class OutgoingInvoiceID(Resource):
                 new_item = OutgoingInvoiceItem(
                     outgoing_invoice_id=id,
                     product_name=product.name,
+                    product_description=item_data.get('product_description'),
                     quantity=quantity,
                     unit_of_measure=item_data['unit_of_measure'],
                     unit_price=unit_price,

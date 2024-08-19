@@ -72,7 +72,6 @@ class IncomingInvoiceList(Resource):
             contract_id=data['contract_id'],
             organization_id=data['organization_id'],
             storage_id=data['storage_id'],
-            contract_number=data.get('contract_number'),
             responsible_person_id=data['responsible_person_id'],
             comment=data.get('comment')
         )
