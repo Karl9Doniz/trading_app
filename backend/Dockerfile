@@ -17,6 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the entire backend directory, including migrations
 COPY . .
 
+COPY sshd_config /etc/ssh/
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
@@ -26,6 +27,8 @@ RUN echo 'root:root' | chpasswd && \
 
 # Expose ports for Flask and SSH
 EXPOSE 5000 2222
+
+ENTRYPOINT [ "./entrypoint.sh" ]
 
 # Start SSH and the Flask app
 CMD service ssh start && ./entrypoint.sh
