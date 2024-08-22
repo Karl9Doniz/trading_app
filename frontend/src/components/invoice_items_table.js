@@ -107,7 +107,7 @@ const InvoiceItemsTable = ({ invoice, setInvoice, errors }) => {
     },
     {
       field: 'vat_amount',
-      headerName: 'VAT Amount',
+      headerName: 'VAT',
       width: 120,
     },
     {

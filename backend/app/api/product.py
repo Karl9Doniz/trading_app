@@ -101,3 +101,15 @@ class ProductsByDate(Resource):
         products = Product.query.filter(func.date(Product.date) == filter_date).all()
 
         return products
+
+@api.route('/search')
+class ProductSearch(Resource):
+    @api.doc('search_products')
+    @api.param('name', 'The partial product name to search')
+    @api.marshal_list_with(product_model)
+    def get(self):
+        '''Search products by name with stock greater than 0'''
+        name = request.args.get('name', '')
+        products = Product.query.filter(Product.name.ilike(f'%{name}%'), Product.current_stock > 0).all()
+        return products
+

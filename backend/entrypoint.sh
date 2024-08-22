@@ -2,7 +2,7 @@
 set -e
 
 # Start the SSH server
-/usr/sbin/sshd -D &
+/usr/sbin/sshd
 
 # Function to wait for the database to be ready
 wait_for_db() {

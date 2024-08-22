@@ -91,7 +91,7 @@ class OutgoingInvoiceList(Resource):
 
             discount = Decimal(str(item_data.get('discount', '0')))
             if discount > 0:
-                total_price = total_price * (100 - discount / 100)
+                total_price = total_price * (1 - discount / 100)
 
             new_item = OutgoingInvoiceItem(
                 outgoing_invoice_id=new_invoice.outgoing_invoice_id,
