@@ -59,11 +59,11 @@ const OutgoingItemsTable = ({ invoice, setInvoice, errors, productStock = [] }) 
 
     console.log('Current Stock:', currentStock, 'Requested Quantity:', newRow.quantity); // Debugging
 
-    // if (currentStock !== undefined && newRow.quantity > currentStock) {
-    //   const missingQuantity = newRow.quantity - currentStock;
-    //   alert(`Insufficient stock for product "${newRow.product_name}". Missing quantity: ${missingQuantity}`);
-    //   return oldRow;
-    // }
+    if (currentStock !== undefined && newRow.quantity > currentStock) {
+      const missingQuantity = newRow.quantity - currentStock;
+      alert(`Insufficient stock for product "${newRow.product_name}". Missing quantity: ${missingQuantity}`);
+      return oldRow;
+    }
 
     const { totalPrice, vatAmount } = calculateTotalPriceAndVAT(newRow);
     const updatedRow = { ...newRow, total_price: totalPrice, vat_amount: vatAmount };
@@ -95,19 +95,31 @@ const OutgoingItemsTable = ({ invoice, setInvoice, errors, productStock = [] }) 
     }));
   };
 
+  const validateQuantity = (params) => {
+    const currentStock = productStockMap[params.row.product_name];
+    console.log('Validating Quantity:', params.row.product_name, params.value, 'Stock:', currentStock); // Debugging
+
+    if (currentStock !== undefined && params.value > currentStock) {
+      const missingQuantity = params.value - currentStock;
+      alert(`Insufficient stock for product "${params.row.product_name}". Missing quantity: ${missingQuantity}`);
+      return false;
+    }
+    return true;
+  };
+
   const handleProductNameChange = async (event, newValue, params) => {
     if (newValue) {
       const product = newValue.value;
-
       const updatedRow = {
         ...rows[params.id],
-        product_name: product.name,  // Only update the product name
+        product_name: product.name,
+        product_description: product.description,
+        unit_of_measure: product.unit_of_measure,
+        unit_price: product.unit_price,
+        vat_percentage: product.vat_percentage,
+        account_number: product.account_number,
       };
-
-      setRows((prevRows) =>
-        prevRows.map((row) => (row.id === params.id ? updatedRow : row))
-      );
-
+      setRows((prevRows) => prevRows.map((row) => row.id === params.id ? updatedRow : row));
       setInvoice((prevInvoice) => ({
         ...prevInvoice,
         items: prevInvoice.items.map((item, index) =>
@@ -115,14 +127,12 @@ const OutgoingItemsTable = ({ invoice, setInvoice, errors, productStock = [] }) 
         ),
       }));
 
-      // Update product stock map (optional)
-      setProductStockMap((prevMap) => ({
+      setProductStockMap(prevMap => ({
         ...prevMap,
-        [product.name]: product.current_stock,
+        [product.name]: product.current_stock
       }));
     }
   };
-
 
   const addNewRow = () => {
     const newItem = {
@@ -160,7 +170,7 @@ const OutgoingItemsTable = ({ invoice, setInvoice, errors, productStock = [] }) 
       headerName: 'Product Name',
       width: 200,
       editable: true,
-      renderCell: (params) => (
+      renderEditCell: (params) => (
         <Autocomplete
           fullWidth
           autoHighlight
@@ -170,7 +180,7 @@ const OutgoingItemsTable = ({ invoice, setInvoice, errors, productStock = [] }) 
           getOptionLabel={(option) => option.label || ''}
           value={params.value ? { label: params.value } : null}
           onChange={(event, newValue) => {
-            handleProductNameChange(event, newValue, params);
+            params.api.setEditCellValue({ id: params.id, field: params.field, value: newValue?.label || '' });
           }}
           renderInput={(params) => (
             <TextField
@@ -180,9 +190,12 @@ const OutgoingItemsTable = ({ invoice, setInvoice, errors, productStock = [] }) 
               fullWidth
               sx={{
                 marginTop: '5px',
-              }}
+              }}  // Ensure the text field has no padding
             />
           )}
+          onInputChange={(event, newInputValue) => {
+            // Optionally, load options dynamically based on user input
+          }}
         />
       ),
     },
@@ -194,7 +207,8 @@ const OutgoingItemsTable = ({ invoice, setInvoice, errors, productStock = [] }) 
         width: 100,
         editable: (params) => !!editRowsModel[params.id],
         preProcessEditCellProps: (params) => {
-          return { ...params.props};
+          const isValid = validateQuantity(params);
+          return { ...params.props, error: !isValid };
         }
       },
     { field: 'unit_of_measure', headerName: 'Unit', width: 70, editable: (params) => !!editRowsModel[params.id] },
@@ -272,7 +286,7 @@ const OutgoingItemsTable = ({ invoice, setInvoice, errors, productStock = [] }) 
         rows={rows}
         columns={columns}
         autoHeight
-        // disableSelectionOnClick
+        disableSelectionOnClick
         processRowUpdate={handleProcessRowUpdate}
         components={{ Toolbar: GridToolbar }}
         sx={{ mb: 2 }}
